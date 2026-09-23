@@ -1,0 +1,47 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Stock history{% endblock %}
+{% block page_sub %}<p class="page__sub">Every movement, newest first. Nothing here is ever edited or deleted.</p>{% endblock %}
+
+{% block content %}
+<form class="card-x mb-3" method="get">
+  <div class="card-x__body filters">
+    <input name="q" value="{{ search }}" class="form-control"
+           placeholder="Item name, code, part number or document number">
+    <select name="type" class="form-select">
+      <option value="">Everything</option>
+      {% for value, label in movement_types %}
+        <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <div class="filters__go"><button class="btn-x btn-x--primary w-100">Filter</button></div>
+  </div>
+</form>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Item</th><th>Date</th><th>What happened</th><th class="num">Qty</th>
+        <th class="num">Left</th>{% if is_manager %}<th class="num">Value</th>{% endif %}
+        <th>Paper</th><th>Who</th></tr></thead>
+      <tbody>
+      {% for m in movements %}
+        <tr>
+          <td><a href="{% url 'inventory:item_detail' m.item.pk %}">{{ m.item.name|truncatechars:34 }}</a>
+            <div class="text-muted" style="font-size:12.5px">{{ m.item.code }}</div></td>
+          <td data-label="Date">{{ m.movement_date|date:"d M Y" }}</td>
+          <td data-label="What happened">{{ m.get_movement_type_display }}</td>
+          <td data-label="Qty" class="num tabular {% if m.is_inward %}text-success{% else %}text-danger{% endif %}">
+            {% if m.is_inward %}+{% else %}-{% endif %}{{ m.quantity|floatformat:2 }}</td>
+          <td data-label="Left" class="num tabular">{{ m.balance_after|floatformat:2 }}</td>
+          {% if is_manager %}<td data-label="Value" class="num tabular">{{ m.value|floatformat:0 }}</td>{% endif %}
+          <td data-label="Paper" class="text-muted">{{ m.source_reference|default:"-" }}</td>
+          <td data-label="Who" class="text-muted">{{ m.created_by|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8">{% include "inventory/_empty.html" with icon="i-clock" title="Nothing found" text="Try a different search." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

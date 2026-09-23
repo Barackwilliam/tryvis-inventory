@@ -1,0 +1,13 @@
+{% comment %}bars + optional unit{% endcomment %}
+{% if bars %}
+<div class="hbar">
+  {% for row in bars %}
+    <div class="hbar__row">
+      <span class="hbar__label" title="{{ row.label }}">{{ row.label }}</span>
+      <span class="hbar__track"><span class="hbar__fill"
+            style="width:{{ row.percent }}%;background:{{ row.tone }}"></span></span>
+      <span class="hbar__value">{{ row.value|floatformat:0 }}</span>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}

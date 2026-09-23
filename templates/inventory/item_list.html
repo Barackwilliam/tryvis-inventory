@@ -1,0 +1,93 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}All items{% endblock %}
+{% block page_sub %}<p class="page__sub">{{ summary.total }} item{{ summary.total|pluralize }} in the catalogue</p>{% endblock %}
+{% block actions %}
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:item_create' %}"><svg><use href="#i-plus"/></svg>Add item</a>
+{% endblock %}
+
+{% block content %}
+<div class="stat-strip mb-3">
+  <div class="stat-tile">
+    <span class="stat-tile__label">Items</span>
+    <div class="stat-tile__value tabular">{{ summary.total }}</div>
+  </div>
+  <div class="stat-tile {% if summary.low %}stat-tile--warning{% endif %}">
+    <span class="stat-tile__label">Running out</span>
+    <div class="stat-tile__value tabular">{{ summary.low }}</div>
+    <div class="stat-tile__foot">below the level you set</div>
+  </div>
+  <div class="stat-tile {% if summary.out %}stat-tile--danger{% endif %}">
+    <span class="stat-tile__label">Finished</span>
+    <div class="stat-tile__value tabular">{{ summary.out }}</div>
+    <div class="stat-tile__foot">nothing on the shelf</div>
+  </div>
+  {% if is_manager %}
+  <div class="stat-tile">
+    <span class="stat-tile__label">Value in store</span>
+    <div class="stat-tile__value tabular">{{ summary.value|floatformat:0 }} <small>TZS</small></div>
+  </div>
+  {% endif %}
+</div>
+
+{% if is_manager and by_category %}
+<div class="card-x mb-3">
+  <div class="card-x__head"><h3>Where the money sits</h3>
+    <a class="spacer" href="{% url 'inventory:report_valuation' %}">Full report</a></div>
+  <div class="card-x__body">
+    {% include "inventory/_hbars.html" with bars=by_category %}
+  </div>
+</div>
+{% endif %}
+
+<form class="card-x mb-3" method="get">
+  <div class="card-x__body filters">
+    <input name="q" value="{{ search }}" class="form-control"
+           placeholder="Search by name, code or part number">
+    <select name="category" class="form-select">
+      <option value="">All groups</option>
+      {% for c in categories %}
+        <option value="{{ c.pk }}" {% if selected_category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <label class="form-check">
+      <input class="form-check-input" type="checkbox" name="low" value="1" {% if low_only %}checked{% endif %}>
+      <span class="form-check-label">Only items running out</span>
+    </label>
+    <div class="filters__go"><button class="btn-x btn-x--primary w-100">Search</button></div>
+  </div>
+</form>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr>
+        <th>Item</th><th>Code</th><th>Part no.</th><th>Group</th>
+        <th class="num">In stock</th><th class="num">Alert at</th>
+        {% if is_manager %}<th class="num">Cost each</th>{% endif %}
+        <th class="num">Price each</th><th></th>
+      </tr></thead>
+      <tbody>
+      {% for item in items %}
+        <tr>
+          <td><a href="{% url 'inventory:item_detail' item.pk %}">{{ item.name }}</a></td>
+          <td data-label="Code" class="text-muted">{{ item.code }}</td>
+          <td data-label="Part no." class="text-muted">{{ item.part_number|default:"-" }}</td>
+          <td data-label="Group">{{ item.category.name }}</td>
+          <td data-label="In stock" class="num {% if item.is_below_minimum %}text-danger fw-bold{% endif %}">
+            {{ item.quantity_on_hand|floatformat:2 }} {{ item.unit }}
+            {% if item.is_below_minimum %}<span class="chip chip--danger ms-1">Low</span>{% endif %}
+          </td>
+          <td data-label="Alert at" class="num text-muted">{{ item.minimum_level|floatformat:2 }}</td>
+          {% if is_manager %}<td data-label="Cost each" class="num tabular">{{ item.average_cost|floatformat:2 }}</td>{% endif %}
+          <td data-label="Price each" class="num tabular">{{ item.selling_price|floatformat:2 }}</td>
+          <td data-label="" class="num">
+            <a class="btn-x btn-x--sm" href="{% url 'inventory:item_edit' item.pk %}">Edit</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9">{% include "inventory/_empty.html" with icon="i-box" title="No items found" text="Try a different search, or add the item." action_url="/app/items/new/" action_label="Add item" %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

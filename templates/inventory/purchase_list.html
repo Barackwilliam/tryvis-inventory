@@ -1,0 +1,69 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Stock received{% endblock %}
+{% block actions %}
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:purchase_create' %}"><svg><use href="#i-plus"/></svg>Record new stock</a>
+{% endblock %}
+
+{% block content %}
+<div class="stat-strip mb-3">
+  <div class="stat-tile">
+    <span class="stat-tile__label">Spent on stock</span>
+    <div class="stat-tile__value tabular">{{ summary.spend|floatformat:0 }} <small>TZS</small></div>
+    <div class="stat-tile__foot">goods, shipping and customs together</div>
+  </div>
+  <div class="stat-tile stat-tile--warning">
+    <span class="stat-tile__label">Shipping &amp; customs</span>
+    <div class="stat-tile__value tabular">{{ summary.extras|floatformat:0 }} <small>TZS</small></div>
+    <div class="stat-tile__foot">{{ summary.extras_share }}% on top of the goods</div>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile__label">This month</span>
+    <div class="stat-tile__value tabular">{{ summary.this_month|floatformat:0 }} <small>TZS</small></div>
+  </div>
+  <div class="stat-tile {% if summary.drafts %}stat-tile--warning{% endif %}">
+    <span class="stat-tile__label">Not added yet</span>
+    <div class="stat-tile__value tabular">{{ summary.drafts }}</div>
+    <div class="stat-tile__foot">saved but not in stock</div>
+  </div>
+</div>
+
+{% if spend_chart %}
+<div class="card-x mb-3">
+  <div class="card-x__head"><h3>What stock costs you</h3>
+    <span class="spacer text-muted" style="font-size:12px">last 6 months</span></div>
+  <div class="card-x__body">
+    {% include "inventory/_chart_bars.html" with chart=spend_chart chart_label="Cost of goods and of getting them here" %}
+    <p class="text-muted mt-2 mb-0" style="font-size:12.5px">
+      The amber bar is what it costs to get the goods here. When it grows faster than
+      the blue one, your real cost per piece is rising even if the supplier's price has not.
+    </p>
+  </div>
+</div>
+{% endif %}
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Number</th><th>Supplier</th><th>Date</th><th>Paid in</th>
+        <th>Status</th><th class="num">Goods</th><th class="num">Total cost</th></tr></thead>
+      <tbody>
+      {% for p in purchases %}
+        <tr>
+          <td><a href="{% url 'inventory:purchase_detail' p.pk %}">{{ p.reference }}</a></td>
+          <td data-label="Supplier">{{ p.supplier.name }}</td>
+          <td data-label="Date">{{ p.purchase_date|date:"d M Y" }}</td>
+          <td data-label="Paid in">{{ p.currency }}</td>
+          <td data-label="Status">
+            <span class="chip {% if p.status == 'RECEIVED' %}chip--success{% else %}chip--warning{% endif %}">
+              {{ p.get_status_display }}</span></td>
+          <td data-label="Goods" class="num tabular">{{ p.goods_total_tzs|floatformat:0 }}</td>
+          <td data-label="Total cost" class="num tabular">{{ p.landed_total|floatformat:0 }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">{% include "inventory/_empty.html" with icon="i-truck" title="No stock recorded yet" text="Write down what you receive so the cost of each piece stays correct." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

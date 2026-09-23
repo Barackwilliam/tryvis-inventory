@@ -1,0 +1,25 @@
+{% comment %}donut + middle_value + middle_label{% endcomment %}
+{% if donut %}
+<div class="donut">
+  <svg width="{{ donut.size }}" height="{{ donut.size }}" viewBox="0 0 {{ donut.size }} {{ donut.size }}"
+       role="img" aria-label="{{ chart_label|default:'Breakdown' }}">
+    <circle cx="{{ donut.centre }}" cy="{{ donut.centre }}" r="{{ donut.radius }}"
+            fill="none" stroke="var(--border-soft)" stroke-width="{{ donut.thickness }}"/>
+    {% for arc in donut.arcs %}
+      <circle cx="{{ donut.centre }}" cy="{{ donut.centre }}" r="{{ donut.radius }}"
+              fill="none" stroke="{{ arc.colour }}" stroke-width="{{ donut.thickness }}"
+              stroke-dasharray="{{ arc.dash }}" stroke-dashoffset="{{ arc.offset }}">
+        <title>{{ arc.label }}: {{ arc.percent }}%</title></circle>
+    {% endfor %}
+  </svg>
+  <div class="legend flex-fill" style="min-width:140px">
+    {% for arc in donut.arcs %}
+      <div class="legend__row">
+        <span class="legend__dot" style="background:{{ arc.colour }}"></span>
+        <span>{{ arc.label }}</span>
+        <b class="tabular">{{ arc.percent }}%</b>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

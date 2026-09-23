@@ -1,0 +1,17 @@
+{% comment %}chart + points{% endcomment %}
+{% if chart %}
+<svg class="chart" viewBox="0 0 {{ chart.width }} {{ chart.height }}" preserveAspectRatio="none"
+     role="img" aria-label="{{ chart_label|default:'Trend' }}">
+  <defs>
+    <linearGradient id="{{ chart.fill_id }}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="{{ chart.tone }}" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="{{ chart.tone }}" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path d="{{ chart.area }}" fill="url(#{{ chart.fill_id }})"/>
+  <path d="{{ chart.line }}" fill="none" stroke="{{ chart.tone }}" stroke-width="2.2"
+        stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+  {{ chart.dots|safe }}
+</svg>
+<div class="chart-labels">{% for p in chart.labels %}<span>{{ p.text }}</span>{% endfor %}</div>
+{% endif %}

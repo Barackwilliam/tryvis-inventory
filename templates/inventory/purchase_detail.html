@@ -1,0 +1,48 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}{{ purchase.reference }}{% endblock %}
+{% block actions %}
+  {% if purchase.status != 'RECEIVED' %}
+    <a href="{% url 'inventory:purchase_receive' purchase.pk %}" class="btn btn-sm btn-primary">Add to store</a>
+  {% endif %}
+{% endblock %}
+{% block content %}
+{% if purchase.status == 'RECEIVED' %}
+  <div class="alert alert-success py-2 small">Added to the store on {{ purchase.received_at|date:"d M Y H:i" }}. Costs shared across the items.</div>
+{% else %}
+  <div class="alert alert-warning py-2 small">Not yet added to the store.</div>
+{% endif %}
+
+<div class="card p-3 mb-3"><div class="row small">
+  <div class="col-md-3"><div class="text-muted">Supplier</div><div class="fw-semibold">{{ purchase.supplier.name }}</div></div>
+  <div class="col-md-2"><div class="text-muted">Their invoice no.</div><div>{{ purchase.supplier_invoice_no|default:"-" }}</div></div>
+  <div class="col-md-2"><div class="text-muted">Paid in</div><div>{{ purchase.currency }} @ {{ purchase.exchange_rate }}</div></div>
+  <div class="col-md-2"><div class="text-muted">Goods only (TZS)</div><div>{{ purchase.goods_total_tzs|floatformat:2 }}</div></div>
+  <div class="col-md-3 text-end"><div class="text-muted">Total cost (TZS)</div>
+    <div class="h5 mb-0">{{ purchase.landed_total|floatformat:2 }}</div></div>
+</div></div>
+
+<div class="card p-3 mb-3"><div class="row small">
+  <div class="col"><div class="text-muted">Shipping</div><div>{{ purchase.freight_cost|floatformat:2 }}</div></div>
+  <div class="col"><div class="text-muted">Customs</div><div>{{ purchase.customs_duty|floatformat:2 }}</div></div>
+  <div class="col"><div class="text-muted">Clearing</div><div>{{ purchase.clearing_charges|floatformat:2 }}</div></div>
+  <div class="col"><div class="text-muted">Other</div><div>{{ purchase.other_charges|floatformat:2 }}</div></div>
+  <div class="col"><div class="text-muted">Costs shared by</div><div>{{ purchase.get_allocation_method_display }}</div></div>
+</div></div>
+
+<div class="card"><div class="table-wrap"><table class="table-x table--stack">
+  <thead><tr><th>Item</th><th class="text-end">Qty</th><th class="text-end">Price each</th>
+    <th class="text-end">Goods total TZS</th><th class="text-end">Extra costs</th><th class="text-end">Real cost each</th></tr></thead>
+  <tbody>
+  {% for line in purchase.lines.all %}
+    <tr>
+      <td>{{ line.item.code }} · {{ line.item.name }}</td>
+      <td data-label="Quantity" class="num tabular">{{ line.quantity|floatformat:3 }}</td>
+      <td data-label="Price each" class="num tabular">{{ line.unit_price|floatformat:2 }}</td>
+      <td data-label="Goods total" class="num tabular">{{ line.line_total_tzs|floatformat:2 }}</td>
+      <td data-label="Extra costs" class="num tabular">{{ line.allocated_charges|floatformat:2 }}</td>
+      <td data-label="Real cost each" class="num tabular fw-semibold">{{ line.landed_unit_cost|floatformat:2 }}</td>
+    </tr>
+  {% empty %}<tr><td colspan="6" class="p-3 text-muted">Nothing added.</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

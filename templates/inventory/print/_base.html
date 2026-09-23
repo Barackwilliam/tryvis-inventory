@@ -1,0 +1,62 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>{{ doc.reference }}</title>
+<style>
+  @page { size: A4; margin: 15mm; }
+  body { font-family: Helvetica, Arial, sans-serif; font-size: 11px; color:#222; }
+  .head { border-bottom:2px solid #0b3d5c; padding-bottom:8px; margin-bottom:14px; }
+  .company { font-size:17px; font-weight:bold; color:#0b3d5c; }
+  .muted { color:#666; }
+  .doc-title { font-size:15px; font-weight:bold; text-transform:uppercase; letter-spacing:1px; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; }
+  th { background:#0b3d5c; color:#fff; text-align:left; padding:6px; font-size:10px; }
+  td { padding:6px; border-bottom:1px solid #e0e0e0; }
+  .right { text-align:right; }
+  .totals td { border:none; padding:3px 6px; }
+  .grand { font-weight:bold; border-top:2px solid #0b3d5c; }
+  .sign { margin-top:40px; width:100%; }
+  .sign td { border:none; padding-top:26px; }
+  .line { border-top:1px solid #888; width:60%; }
+  @media print { .noprint { display:none; } }
+</style></head>
+<body>
+<div class="head">
+  <table><tr>
+    <td style="border:none">
+      <div class="company">{{ company.name|upper }}</div>
+      <div class="muted">{{ company.tagline }} · {{ company.address }}</div>
+      <div class="muted">{{ company.website }}{% if company.phone %} · {{ company.phone }}{% endif %}
+        {% if company.tin %}<br>TIN: {{ company.tin }}{% endif %}</div>
+    </td>
+    <td style="border:none" class="right">
+      <div class="doc-title">{{ doc_label }}</div>
+      <div><strong>{{ doc.reference }}</strong></div>
+      <div class="muted">{{ doc.document_date|date:"d F Y" }}</div>
+    </td>
+  </tr></table>
+</div>
+
+<table><tr>
+  <td style="border:none;width:60%">
+    <div class="muted">To</div>
+    <strong>{{ doc.customer.name }}</strong><br>
+    {{ doc.customer.address|linebreaksbr }}<br>
+    {% if doc.customer.phone %}Tel: {{ doc.customer.phone }}<br>{% endif %}
+    {% if doc.customer.tin %}TIN: {{ doc.customer.tin }}{% endif %}
+  </td>
+  <td style="border:none" class="right">{% block doc_meta %}{% endblock %}</td>
+</tr></table>
+
+{% block doc_body %}{% endblock %}
+
+<table class="sign"><tr>
+  <td><div class="line"></div>Prepared by</td>
+  <td><div class="line"></div>{% block sign_right %}Authorised signature{% endblock %}</td>
+</tr></table>
+
+<p class="muted" style="margin-top:20px;font-size:9px">
+  {% block footer_note %}{% endblock %}
+</p>
+<div class="noprint" style="margin-top:20px">
+  <button onclick="window.print()">Print</button>
+</div>
+</body></html>

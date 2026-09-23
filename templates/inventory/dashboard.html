@@ -1,0 +1,533 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+
+{% block page %}
+<div class="page__head">
+  <div>
+    <h1 class="page__title">{{ greeting }}, {{ request.user.first_name|default:request.user.username }}</h1>
+    <p class="page__sub">Here's where Tryvis stands today &middot; {{ d.today|date:"l, j F Y" }}</p>
+  </div>
+  <div class="page__actions">
+    <a class="btn-x" href="{% url 'inventory:item_create' %}"><svg><use href="#i-plus"/></svg>Add item</a>
+    <a class="btn-x btn-x--primary" href="{% url 'inventory:quotation_create' %}"><svg><use href="#i-file"/></svg>New quotation</a>
+  </div>
+</div>
+
+{% if brief_paragraphs %}
+<div class="brief mb-4">
+  <div class="brief__head">
+    <span class="brief__mark"><svg><use href="#i-spark"/></svg></span>
+    <div>
+      <b>Today's briefing</b>
+      <span class="brief__meta">
+        {% if brief_source == 'grok' %}Written by Grok from your figures{% else %}Written by the system from your figures{% endif %}
+        &middot; {{ brief_at|date:"H:i" }}
+      </span>
+    </div>
+    <a class="btn-x btn-x--sm ms-auto" href="{% url 'inventory:briefing_refresh' %}">
+      <svg><use href="#i-refresh"/></svg><span class="d-none d-sm-block">Rewrite</span>
+    </a>
+  </div>
+  <div class="brief__body">
+    {% for paragraph in brief_paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
+  </div>
+  <div class="brief__foot">
+    <a href="{% url 'inventory:briefing' %}">See the figures this was written from</a>
+  </div>
+</div>
+{% endif %}
+
+{# ------------------------------------------------------------ KPI row 1 #}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="kpi kpi--blue">
+      <div class="kpi__top">
+        <span class="kpi__icon"><svg><use href="#i-box"/></svg></span>
+        <span class="kpi__label">Items we keep</span>
+      </div>
+      <div class="kpi__value tabular">{{ d.item_count }}</div>
+      <div class="kpi__foot">
+        {% if d.items_added %}
+          <span class="trend trend--up"><svg><use href="#i-arrow-up"/></svg>{{ d.items_added }} new</span>
+          <span>this month</span>
+        {% else %}
+          <span>No new items this month</span>
+        {% endif %}
+        <a class="kpi__link" href="{% url 'inventory:item_list' %}">See all</a>
+      </div>
+    </div>
+  </div>
+
+  {% if is_manager %}
+  <div class="col-6 col-lg-3">
+    <div class="kpi">
+      <div class="kpi__top">
+        <span class="kpi__icon kpi__icon--success"><svg><use href="#i-coins"/></svg></span>
+        <span class="kpi__label">Value in store</span>
+      </div>
+      <div class="kpi__value tabular">{{ d.stock_value|floatformat:0 }} <small>TZS</small></div>
+      <div class="kpi__foot">
+        {% if d.stock_value_change is not None %}
+          {% if d.stock_value_change >= 0 %}
+            <span class="trend trend--up"><svg><use href="#i-arrow-up"/></svg>{{ d.stock_value_change|floatformat:1 }}%</span>
+          {% else %}
+            <span class="trend trend--down"><svg><use href="#i-arrow-down"/></svg>{{ d.stock_value_change|floatformat:1 }}%</span>
+          {% endif %}
+          <span>vs last month</span>
+        {% else %}
+          <span>At what the stock cost us</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-6 col-lg-3">
+    <div class="kpi">
+      <div class="kpi__top">
+        <span class="kpi__icon {% if d.alerts.total %}kpi__icon--danger{% else %}kpi__icon--success{% endif %}">
+          <svg><use href="#i-alert"/></svg>
+        </span>
+        <span class="kpi__label">Running out</span>
+      </div>
+      <div class="kpi__value tabular">{{ d.alerts.total }}</div>
+      <div class="kpi__foot">
+        {% if d.alerts.critical %}
+          <span class="chip chip--danger">{{ d.alerts.critical }} urgent</span>
+        {% elif d.alerts.total %}
+          <span>Order soon</span>
+        {% else %}
+          <span>Nothing to order</span>
+        {% endif %}
+        {% if d.alerts.total %}<a class="kpi__link" href="{% url 'inventory:report_low_stock' %}">Handle it</a>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="kpi">
+      <div class="kpi__top">
+        <span class="kpi__icon kpi__icon--info"><svg><use href="#i-tool"/></svg></span>
+        <span class="kpi__label">Workshop jobs</span>
+      </div>
+      <div class="kpi__value tabular">{{ d.workshop.active }}</div>
+      <div class="kpi__foot">
+        {% if d.workshop.overdue %}
+          <span class="chip chip--danger">{{ d.workshop.overdue }} late</span>
+        {% elif d.workshop.due_today %}
+          <span class="chip chip--warning">{{ d.workshop.due_today }} due today</span>
+        {% else %}
+          <span>{{ d.workshop.completed_this_month }} finished this month</span>
+        {% endif %}
+        <a class="kpi__link" href="{% url 'inventory:job_list' %}">Open</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ------------------------------------------------------------ KPI row 2 #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="kpi">
+      <div class="kpi__top">
+        <span class="kpi__icon"><svg><use href="#i-file"/></svg></span>
+        <span class="kpi__label">Quotations waiting</span>
+      </div>
+      <div class="kpi__value tabular">{{ d.quotations.waiting }}</div>
+      <div class="kpi__foot">
+        {% if d.quotations.expired %}
+          <span class="chip chip--muted">{{ d.quotations.expired }} expired</span>
+        {% elif is_manager and d.quotations.waiting_value %}
+          <span class="tabular">{{ d.quotations.waiting_value|floatformat:0 }} TZS on the table</span>
+        {% else %}
+          <span>Waiting for the customer</span>
+        {% endif %}
+        <a class="kpi__link" href="{% url 'inventory:quotation_list' %}">Open</a>
+      </div>
+    </div>
+  </div>
+
+  {% if is_manager %}
+  <div class="col-6 col-lg-3">
+    <div class="kpi">
+      <div class="kpi__top">
+        <span class="kpi__icon kpi__icon--warning"><svg><use href="#i-receipt"/></svg></span>
+        <span class="kpi__label">Money owed to us</span>
+      </div>
+      <div class="kpi__value tabular">{{ d.sales.outstanding|floatformat:0 }} <small>TZS</small></div>
+      <div class="kpi__foot">
+        {% if d.sales.overdue_count %}
+          <span class="chip chip--danger">{{ d.sales.overdue_count }} late</span>
+        {% endif %}
+        <span>{{ d.sales.unpaid_count }} invoice{{ d.sales.unpaid_count|pluralize }} unpaid</span>
+        <a class="kpi__link" href="{% url 'inventory:invoice_list' %}">Open</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-lg-3">
+    <div class="kpi">
+      <div class="kpi__top">
+        <span class="kpi__icon kpi__icon--success"><svg><use href="#i-trend"/></svg></span>
+        <span class="kpi__label">Sold this month</span>
+      </div>
+      <div class="kpi__value tabular">{{ d.sales.this_month|floatformat:0 }} <small>TZS</small></div>
+      <div class="kpi__foot">
+        {% if d.sales.change is not None %}
+          {% if d.sales.change >= 0 %}
+            <span class="trend trend--up"><svg><use href="#i-arrow-up"/></svg>{{ d.sales.change|floatformat:1 }}%</span>
+          {% else %}
+            <span class="trend trend--down"><svg><use href="#i-arrow-down"/></svg>{{ d.sales.change|floatformat:1 }}%</span>
+          {% endif %}
+          <span>vs last month</span>
+        {% else %}
+          <span>First month of sales</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-6 col-lg-3">
+    <div class="kpi">
+      <div class="kpi__top">
+        <span class="kpi__icon"><svg><use href="#i-cart"/></svg></span>
+        <span class="kpi__label">Items sold this month</span>
+      </div>
+      <div class="kpi__value tabular">{{ d.sold_this_month|floatformat:0 }}</div>
+      <div class="kpi__foot">
+        {% if d.sold_change is not None %}
+          {% if d.sold_change >= 0 %}
+            <span class="trend trend--up"><svg><use href="#i-arrow-up"/></svg>{{ d.sold_change|floatformat:1 }}%</span>
+          {% else %}
+            <span class="trend trend--down"><svg><use href="#i-arrow-down"/></svg>{{ d.sold_change|floatformat:1 }}%</span>
+          {% endif %}
+          <span>vs last month</span>
+        {% else %}
+          <span>{{ d.received_this_month|floatformat:0 }} came in</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ------------------------------------------------- health + stock alerts #}
+<div class="row g-3 mb-4">
+  <div class="col-lg-4">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>How the store is doing</h3></div>
+      <div class="card-x__body">
+        {% if d.health.total %}
+        <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+          <div class="health-ring">
+            <svg width="132" height="132" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="{{ d.health.ring.radius }}" fill="none"
+                      stroke="var(--border-soft)" stroke-width="11"/>
+              <circle cx="66" cy="66" r="{{ d.health.ring.radius }}" fill="none"
+                      stroke="{{ d.health.ring.colour }}" stroke-width="11" stroke-linecap="round"
+                      stroke-dasharray="{{ d.health.ring.circumference }}"
+                      stroke-dashoffset="{{ d.health.ring.offset }}"/>
+            </svg>
+            <div class="health-ring__mid">
+              <b>{{ d.health.score }}%</b><span>{{ d.health.verdict }}</span>
+            </div>
+          </div>
+          <div class="flex-fill" style="min-width:150px">
+            <div class="legend">
+              {% for band in d.health.bands %}
+                <div class="legend__row">
+                  <span class="legend__dot" style="background:
+                    {% if band.tone == 'success' %}var(--success)
+                    {% elif band.tone == 'warning' %}var(--warning)
+                    {% elif band.tone == 'danger' %}var(--danger)
+                    {% else %}var(--faint){% endif %}"></span>
+                  <span>{{ band.label }}</span><b class="tabular">{{ band.count }}</b>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="health-bar">
+          {% for seg in d.health.segments %}
+            <span style="width:{{ seg.percent }}%;background:{{ seg.colour }}" title="{{ seg.label }}: {{ seg.count }}"></span>
+          {% endfor %}
+        </div>
+        <p class="text-muted mt-2 mb-0" style="font-size:12.5px">
+          Out of {{ d.health.total }} item{{ d.health.total|pluralize }} you keep in stock.
+        </p>
+        {% else %}
+          {% include "inventory/_empty.html" with icon="i-box" title="No stock yet" text="Add your items and enter what is on the shelf." action_url=item_create_url action_label="Add the first item" %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card-x h-100">
+      <div class="card-x__head">
+        <h3>Order these</h3>
+        {% if d.alerts.total %}
+          <span class="chip chip--danger">{{ d.alerts.total }} need{{ d.alerts.total|pluralize:"s," }} attention</span>
+        {% endif %}
+        <a class="spacer" href="{% url 'inventory:report_low_stock' %}">See all</a>
+      </div>
+      {% if d.alerts.rows %}
+        <div>
+          {% for row in d.alerts.rows %}
+            <a class="alert-row" href="{% url 'inventory:item_detail' row.item.pk %}">
+              <span class="alert-row__bar" style="background:
+                {% if row.tone == 'danger' %}var(--danger){% else %}var(--warning){% endif %}"></span>
+              <span class="alert-row__main">
+                <span class="alert-row__name">{{ row.item.name }}</span>
+                <span class="alert-row__meta">
+                  {{ row.item.code }}{% if row.item.part_number %} &middot; {{ row.item.part_number }}{% endif %}
+                  &middot; {{ row.item.category.name }}
+                </span>
+              </span>
+              <span class="chip chip--{{ row.tone }}">{{ row.label }}</span>
+              <span class="alert-row__num">
+                <b class="tabular">{{ row.item.quantity_on_hand|floatformat:0 }} / {{ row.item.minimum_level|floatformat:0 }}</b>
+                <span>order {{ row.suggested|floatformat:0 }} {{ row.item.unit }}</span>
+              </span>
+            </a>
+          {% endfor %}
+        </div>
+        {% if is_manager %}
+        <div class="card-x__foot d-flex align-items-center gap-2 flex-wrap">
+          <span class="text-muted" style="font-size:12.5px">When the goods arrive, write them in:</span>
+          <a class="btn-x btn-x--sm btn-x--primary" href="{% url 'inventory:purchase_create' %}">
+            <svg><use href="#i-truck"/></svg>Record stock received
+          </a>
+        </div>
+        {% endif %}
+      {% else %}
+        {% include "inventory/_empty.html" with icon="i-check-circle" title="Nothing is running out" text="Every item is above the level you set." %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ------------------------------------------------------------- charts #}
+<div class="row g-3 mb-4">
+  {% if is_manager %}
+  <div class="col-lg-6">
+    <div class="card-x h-100">
+      <div class="card-x__head">
+        <h3>Value in the store</h3>
+        <span class="spacer text-muted" style="font-size:12px">last 6 months, at today's cost</span>
+      </div>
+      <div class="card-x__body">
+        {% if d.value_chart %}
+          <div class="kpi__value tabular mb-2">{{ d.stock_value|floatformat:0 }} <small>TZS</small></div>
+          <svg class="chart" viewBox="0 0 {{ d.value_chart.width }} {{ d.value_chart.height }}" preserveAspectRatio="none" role="img"
+               aria-label="Value of stock over the last six months">
+            <defs>
+              <linearGradient id="valueFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="{{ d.value_chart.tone }}" stop-opacity=".18"/>
+                <stop offset="100%" stop-color="{{ d.value_chart.tone }}" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="{{ d.value_chart.area }}" fill="url(#valueFill)"/>
+            <path d="{{ d.value_chart.line }}" fill="none" stroke="{{ d.value_chart.tone }}"
+                  stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"/>
+            {{ d.value_chart.dots|safe }}
+          </svg>
+          <div class="chart-labels">
+            {% for point in d.value_points %}<span>{{ point.label }}</span>{% endfor %}
+          </div>
+        {% else %}
+          {% include "inventory/_empty.html" with icon="i-chart" title="Not enough history yet" text="The line appears once stock has moved over a few months." %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="{% if is_manager %}col-lg-6{% else %}col-12{% endif %}">
+    <div class="card-x h-100">
+      <div class="card-x__head">
+        <h3>What came in, what went out</h3>
+        <span class="spacer d-flex gap-3" style="font-size:12px">
+          <span class="chip chip--plain" style="background:var(--blue-bg);color:var(--blue-dark)">Came in</span>
+          <span class="chip chip--plain" style="background:var(--info-bg);color:#0369A1">Sold</span>
+        </span>
+      </div>
+      <div class="card-x__body">
+        {% if d.movement_chart %}
+          <svg class="chart" viewBox="0 0 {{ d.movement_chart.width }} {{ d.movement_chart.height }}" role="img"
+               aria-label="Items received and sold each month">
+            <line x1="0" y1="{{ d.movement_chart.baseline }}" x2="{{ d.movement_chart.width }}"
+                  y2="{{ d.movement_chart.baseline }}" stroke="var(--border)" stroke-width="1"/>
+            {% for bar in d.movement_chart.bars %}
+              <rect x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.w }}" height="{{ bar.h }}" rx="2.5"
+                    fill="{{ bar.tone }}" {% if bar.faint %}opacity=".18"{% endif %}>
+                <title>{{ bar.title }}</title>
+              </rect>
+            {% endfor %}
+          </svg>
+          <div class="chart-labels">
+            {% for label in d.movement_chart.labels %}<span>{{ label.text }}</span>{% endfor %}
+          </div>
+        {% else %}
+          {% include "inventory/_empty.html" with icon="i-chart" title="Nothing has moved yet" text="Receive or sell some stock and this fills in." %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ------------------------------------------------- activity + attention #}
+<div class="row g-3 mb-4">
+  <div class="col-lg-5">
+    <div class="card-x h-100">
+      <div class="card-x__head">
+        <h3>What just happened</h3>
+        <a class="spacer" href="{% url 'inventory:movement_list' %}">Full history</a>
+      </div>
+      <div class="card-x__body">
+        {% if d.activity %}
+          <div class="feed">
+            {% for row in d.activity %}
+              <div class="feed__row">
+                <div class="feed__time">{{ row.when }}</div>
+                <div class="feed__spine">
+                  <div class="feed__dot" style="color:
+                    {% if row.tone == 'success' %}var(--success)
+                    {% elif row.tone == 'danger' %}var(--danger)
+                    {% elif row.tone == 'warning' %}var(--warning)
+                    {% elif row.tone == 'info' %}var(--info)
+                    {% else %}var(--blue){% endif %}"></div>
+                  <div class="feed__line"></div>
+                </div>
+                <div class="feed__body">
+                  <b>{{ row.verb }}</b>
+                  <small>
+                    {{ row.movement.item.code }} &middot; {{ row.movement.item.name|truncatechars:34 }}
+                    {% if row.movement.source_reference %}&middot; {{ row.movement.source_reference }}{% endif %}
+                  </small>
+                </div>
+                <div class="feed__qty tabular" style="color:
+                  {% if row.sign == '+' %}var(--success){% else %}var(--danger){% endif %}">
+                  {{ row.sign }}{{ row.movement.quantity|floatformat:0 }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          {% include "inventory/_empty.html" with icon="i-clock" title="Nothing yet today" text="Stock movements show up here as they happen." %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>Needs someone to act</h3></div>
+      <div class="card-x__body p-0">
+        <ul class="nav nav-tabs px-3 pt-2" role="tablist" style="border-bottom:1px solid var(--border-soft)">
+          <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-invoices" type="button">
+            Unpaid invoices{% if d.sales.unpaid_count %} ({{ d.sales.unpaid_count }}){% endif %}</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-jobs" type="button">
+            Jobs{% if d.workshop.active %} ({{ d.workshop.active }}){% endif %}</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-deliveries" type="button">
+            To deliver{% if d.pending_deliveries %} ({{ d.pending_deliveries|length }}){% endif %}</button></li>
+        </ul>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="t-invoices">
+            {% if d.sales.recent_unpaid %}
+              <div class="table-wrap"><table class="table-x">
+                <thead><tr><th>Invoice</th><th>Customer</th><th>Pay by</th><th class="num">Still owed</th></tr></thead>
+                <tbody>
+                {% for invoice in d.sales.recent_unpaid %}
+                  <tr>
+                    <td><a href="{% url 'inventory:invoice_detail' invoice.pk %}">{{ invoice.reference }}</a></td>
+                    <td>{{ invoice.customer.name|truncatechars:26 }}</td>
+                    <td>
+                      {% if invoice.is_overdue %}<span class="chip chip--danger">Late</span>
+                      {% elif invoice.due_date %}{{ invoice.due_date|date:"d M" }}
+                      {% else %}<span class="text-muted">-</span>{% endif %}
+                    </td>
+                    <td class="num tabular">{{ invoice.balance_due|floatformat:0 }}</td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table></div>
+            {% else %}
+              {% include "inventory/_empty.html" with icon="i-check-circle" title="Every invoice is paid" text="Nothing outstanding." %}
+            {% endif %}
+          </div>
+
+          <div class="tab-pane fade" id="t-jobs">
+            {% if d.workshop.recent %}
+              <div class="table-wrap"><table class="table-x">
+                <thead><tr><th>Job</th><th>Customer</th><th>Promised</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for job in d.workshop.recent %}
+                  <tr>
+                    <td><a href="{% url 'inventory:job_detail' job.pk %}">{{ job.reference }}</a>
+                        <div class="text-muted" style="font-size:12px">{{ job.title|truncatechars:34 }}</div></td>
+                    <td>{{ job.customer.name|truncatechars:22 }}</td>
+                    <td>{% if job.due_date %}{{ job.due_date|date:"d M" }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
+                    <td>
+                      {% if job.is_overdue %}<span class="chip chip--danger">Late</span>
+                      {% else %}<span class="chip chip--info">{{ job.get_status_display }}</span>{% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table></div>
+            {% else %}
+              {% include "inventory/_empty.html" with icon="i-tool" title="No jobs open" text="The workshop is clear." %}
+            {% endif %}
+          </div>
+
+          <div class="tab-pane fade" id="t-deliveries">
+            {% if d.pending_deliveries %}
+              <div class="table-wrap"><table class="table-x">
+                <thead><tr><th>Delivery note</th><th>Customer</th><th>Date</th><th></th></tr></thead>
+                <tbody>
+                {% for note in d.pending_deliveries %}
+                  <tr>
+                    <td><a href="{% url 'inventory:delivery_detail' note.pk %}">{{ note.reference }}</a></td>
+                    <td>{{ note.customer.name|truncatechars:26 }}</td>
+                    <td>{{ note.document_date|date:"d M Y" }}</td>
+                    <td class="num"><span class="chip chip--warning">Still in store</span></td>
+                  </tr>
+                {% endfor %}
+                </tbody>
+              </table></div>
+            {% else %}
+              {% include "inventory/_empty.html" with icon="i-send" title="Nothing waiting to go out" text="All delivery notes are confirmed." %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# -------------------------------------------------------- quick actions #}
+<div class="section-head"><h2>Start something</h2></div>
+<div class="quick-grid">
+  <a class="quick" href="{% url 'inventory:quotation_create' %}">
+    <span class="quick__icon"><svg><use href="#i-file"/></svg></span>New quotation</a>
+  <a class="quick" href="{% url 'inventory:invoice_create' %}">
+    <span class="quick__icon"><svg><use href="#i-receipt"/></svg></span>New invoice</a>
+  <a class="quick" href="{% url 'inventory:delivery_create' %}">
+    <span class="quick__icon"><svg><use href="#i-send"/></svg></span>New delivery note</a>
+  <a class="quick" href="{% url 'inventory:job_create' %}">
+    <span class="quick__icon"><svg><use href="#i-tool"/></svg></span>New workshop job</a>
+  {% if is_manager %}
+  <a class="quick" href="{% url 'inventory:purchase_create' %}">
+    <span class="quick__icon"><svg><use href="#i-truck"/></svg></span>Record stock received</a>
+  {% endif %}
+  <a class="quick" href="{% url 'inventory:stock_adjust' %}">
+    <span class="quick__icon"><svg><use href="#i-sliders"/></svg></span>Fix a stock count</a>
+  <a class="quick" href="{% url 'inventory:item_create' %}">
+    <span class="quick__icon"><svg><use href="#i-plus"/></svg></span>Add an item</a>
+</div>
+{% endblock %}

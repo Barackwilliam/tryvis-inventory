@@ -1,0 +1,61 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}{{ job.reference }} · {{ job.title }}{% endblock %}
+{% block actions %}
+  <a href="{% url 'inventory:job_issue' job.pk %}" class="btn btn-sm btn-primary">Take these parts from the store</a>
+{% endblock %}
+{% block content %}
+{% if is_manager %}
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Parts used</div>
+    <div class="h5 mb-0">{{ job.material_cost|floatformat:2 }}</div></div></div>
+  <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Labour</div>
+    <div class="h5 mb-0">{{ job.labour_cost|floatformat:2 }}</div></div></div>
+  <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Cost us</div>
+    <div class="h5 mb-0">{{ job.total_cost|floatformat:2 }}</div></div></div>
+  <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Profit</div>
+    <div class="h5 mb-0 {% if job.profit < 0 %}text-danger{% else %}text-success{% endif %}">{{ job.profit|floatformat:2 }}</div></div></div>
+</div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-header bg-white"><strong>Parts used on this job</strong></div>
+  <div class="table-wrap"><table class="table-x table--stack">
+    <thead><tr><th>Item</th><th class="text-end">Qty</th>{% if is_manager %}<th class="text-end">Cost each</th>
+      <th class="text-end">Total</th>{% endif %}<th>Taken from store</th></tr></thead>
+    <tbody>
+    {% for m in job.materials.all %}
+      <tr>
+        <td>{{ m.item.name }}<div class="text-muted" style="font-size:12.5px">{{ m.item.code }}</div></td>
+        <td data-label="Qty" class="num tabular">{{ m.quantity|floatformat:3 }}</td>
+        {% if is_manager %}<td data-label="Cost each" class="num tabular">{{ m.unit_cost|floatformat:2 }}</td>
+        <td data-label="Total" class="num tabular">{{ m.total_cost|floatformat:2 }}</td>{% endif %}
+        <td data-label="Taken from store">{% if m.is_issued %}<span class="chip chip--success">Taken</span>
+            {% else %}<span class="chip chip--warning">Not yet</span>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="5" class="p-3 text-muted">No parts added yet.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="card p-4 mb-3"><div class="row g-3">
+    {% for field in form %}
+      <div class="col-md-4"><label class="form-label small fw-semibold">{{ field.label }}</label>{{ field }}</div>
+    {% endfor %}
+  </div></div>
+  <div class="card p-3 mb-3">
+    <div class="fw-semibold mb-2">Add or change parts</div>
+    {{ formset.management_form }}
+    <div class="table-wrap"><table class="table table-sm align-middle">
+      <tbody>
+      {% for line in formset %}
+        <tr>{{ line.id }}<td>{{ line.item }}</td><td>{{ line.quantity }}</td>
+          <td class="text-center">{% if line.instance.pk %}{{ line.DELETE }}{% endif %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  <button class="btn btn-primary">Save changes</button>
+</form>
+{% endblock %}

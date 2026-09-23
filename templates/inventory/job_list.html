@@ -1,0 +1,89 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Workshop jobs{% endblock %}
+{% block actions %}
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:job_create' %}"><svg><use href="#i-plus"/></svg>New job</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="{% if profit_chart %}col-lg-6{% else %}col-12{% endif %}">
+    <div class="stat-strip h-100">
+      <div class="stat-tile">
+        <span class="stat-tile__label">Jobs open</span>
+        <div class="stat-tile__value tabular">{{ summary.open }}</div>
+      </div>
+      <div class="stat-tile {% if summary.late %}stat-tile--danger{% endif %}">
+        <span class="stat-tile__label">Past the promised date</span>
+        <div class="stat-tile__value tabular">{{ summary.late }}</div>
+        {% if summary.due_today %}<div class="stat-tile__foot">{{ summary.due_today }} due today</div>{% endif %}
+      </div>
+      <div class="stat-tile stat-tile--success">
+        <span class="stat-tile__label">Finished this month</span>
+        <div class="stat-tile__value tabular">{{ summary.finished_this_month }}</div>
+      </div>
+      {% if show_money %}
+      <div class="stat-tile">
+        <span class="stat-tile__label">Profit on quoted jobs</span>
+        <div class="stat-tile__value tabular">{{ summary.profit|floatformat:0 }} <small>TZS</small></div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if profit_chart %}
+  <div class="col-lg-6">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>Profit per job</h3>
+        <span class="spacer text-muted" style="font-size:12px">what you charged, less what it cost</span></div>
+      <div class="card-x__body">
+        {% include "inventory/_chart_signed.html" with chart=profit_chart chart_label="Profit for each recent job" %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<form class="card-x mb-3" method="get">
+  <div class="card-x__body filters">
+    <select name="status" class="form-select">
+      <option value="">All jobs</option>
+      {% for value, label in statuses %}
+        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <div class="filters__go"><button class="btn-x btn-x--primary w-100">Show</button></div>
+  </div>
+</form>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Job</th><th>Customer</th><th>Started</th><th>Promised</th><th>Status</th>
+        {% if show_money %}<th class="num">Cost us</th><th class="num">We charged</th><th class="num">Profit</th>{% endif %}
+      </tr></thead>
+      <tbody>
+      {% for job in jobs %}
+        <tr>
+          <td><a href="{% url 'inventory:job_detail' job.pk %}">{{ job.reference }}</a>
+            <div class="text-muted" style="font-size:12.5px">{{ job.title|truncatechars:44 }}</div></td>
+          <td data-label="Customer">{{ job.customer.name }}</td>
+          <td data-label="Started">{{ job.start_date|date:"d M Y" }}</td>
+          <td data-label="Promised">
+            {% if job.is_overdue %}<span class="chip chip--danger">{{ job.due_date|date:"d M" }} · late</span>
+            {% elif job.due_date %}{{ job.due_date|date:"d M Y" }}
+            {% else %}<span class="text-muted">-</span>{% endif %}</td>
+          <td data-label="Status"><span class="chip chip--muted">{{ job.get_status_display }}</span></td>
+          {% if show_money %}
+            <td data-label="Cost us" class="num tabular">{{ job.total_cost|floatformat:0 }}</td>
+            <td data-label="We charged" class="num tabular">{{ job.quoted_amount|floatformat:0 }}</td>
+            <td data-label="Profit" class="num tabular {% if job.profit < 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ job.profit|floatformat:0 }}</td>
+          {% endif %}
+        </tr>
+      {% empty %}
+        <tr><td colspan="8">{% include "inventory/_empty.html" with icon="i-tool" title="No jobs yet" text="Open a job card when work comes into the workshop." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

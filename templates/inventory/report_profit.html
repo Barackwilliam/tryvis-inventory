@@ -1,0 +1,79 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Profit{% endblock %}
+{% block page_sub %}<p class="page__sub">Last {{ days }} days, invoice by invoice</p>{% endblock %}
+
+{% block content %}
+<div class="stat-strip mb-3">
+  <div class="stat-tile">
+    <span class="stat-tile__label">We charged</span>
+    <div class="stat-tile__value tabular">{{ total_sales|floatformat:0 }} <small>TZS</small></div>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile__label">It cost us</span>
+    <div class="stat-tile__value tabular">{{ total_cost|floatformat:0 }} <small>TZS</small></div>
+    <div class="stat-tile__foot">at what the goods cost, shipping included</div>
+  </div>
+  <div class="stat-tile {% if total_profit >= 0 %}stat-tile--success{% else %}stat-tile--danger{% endif %}">
+    <span class="stat-tile__label">Profit</span>
+    <div class="stat-tile__value tabular">{{ total_profit|floatformat:0 }} <small>TZS</small></div>
+    <div class="stat-tile__foot">{{ margin }}% of what you charged</div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-7">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>Profit day by day</h3></div>
+      <div class="card-x__body">
+        {% if profit_chart %}
+          {% include "inventory/_chart_signed.html" with chart=profit_chart chart_label="Profit on each day with sales" %}
+        {% else %}
+          {% include "inventory/_empty.html" with icon="i-trend" title="No sales in this period" text="Pick a longer period, or raise an invoice." %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>Best customers</h3>
+        <span class="spacer text-muted" style="font-size:12px">by profit</span></div>
+      <div class="card-x__body">
+        {% if best_invoices %}{% include "inventory/_hbars.html" with bars=best_invoices %}
+        {% else %}{% include "inventory/_empty.html" with icon="i-users" title="Nothing yet" %}{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<form class="card-x mb-3" method="get">
+  <div class="card-x__body filters">
+    <input name="days" value="{{ days }}" type="number" min="1" class="form-control"
+           aria-label="How many days back">
+    <div class="filters__go"><button class="btn-x btn-x--primary w-100">Show</button></div>
+  </div>
+</form>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th>
+        <th class="num">We charged</th><th class="num">It cost us</th><th class="num">Profit</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td><a href="{% url 'inventory:invoice_detail' row.invoice.pk %}">{{ row.invoice.reference }}</a></td>
+          <td data-label="Customer">{{ row.invoice.customer.name }}</td>
+          <td data-label="Date">{{ row.invoice.document_date|date:"d M Y" }}</td>
+          <td data-label="We charged" class="num tabular">{{ row.sales|floatformat:0 }}</td>
+          <td data-label="It cost us" class="num tabular">{{ row.cost|floatformat:0 }}</td>
+          <td data-label="Profit" class="num tabular {% if row.profit < 0 %}text-danger{% else %}text-success{% endif %}">
+            {{ row.profit|floatformat:0 }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">{% include "inventory/_empty.html" with icon="i-receipt" title="No invoices in this period" %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

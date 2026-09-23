@@ -1,0 +1,17 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}{{ note.reference }}{% endblock %}
+{% block actions %}
+  <a href="{% url 'inventory:document_print' 'delivery' note.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank">Print</a>
+  {% if note.status != 'DELIVERED' %}
+    <a href="{% url 'inventory:delivery_confirm' note.pk %}" class="btn btn-sm btn-danger">Confirm the customer took the goods</a>
+  {% endif %}
+{% endblock %}
+{% block content %}
+{% if note.status == 'DELIVERED' %}
+  <div class="alert alert-success py-2 small">Given to the customer on {{ note.delivered_at|date:"d M Y H:i" }}. The items have left the store.</div>
+{% else %}
+  <div class="alert alert-warning py-2 small">The items are still in the store. They only come out when you confirm below.</div>
+{% endif %}
+{% include "inventory/_doc_header.html" with doc=note %}
+{% include "inventory/_doc_lines.html" with doc=note %}
+{% endblock %}

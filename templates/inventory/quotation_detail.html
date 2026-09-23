@@ -1,0 +1,12 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}{{ quotation.reference }}{% endblock %}
+{% block actions %}
+  <a href="{% url 'inventory:document_print' 'quotation' quotation.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank">Print</a>
+  <a href="{% url 'inventory:document_print' 'quotation' quotation.pk %}?pdf=1" class="btn btn-sm btn-outline-secondary">PDF</a>
+  <a href="{% url 'inventory:quotation_status' quotation.pk 'sent' %}" class="btn btn-sm btn-outline-primary">Mark sent</a>
+  <a href="{% url 'inventory:quotation_convert' quotation.pk %}" class="btn btn-sm btn-primary">Convert to invoice</a>
+{% endblock %}
+{% block content %}
+{% include "inventory/_doc_header.html" with doc=quotation %}
+{% include "inventory/_doc_lines.html" with doc=quotation %}
+{% endblock %}

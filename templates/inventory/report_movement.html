@@ -1,0 +1,86 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}What sells, what sits{% endblock %}
+{% block page_sub %}<p class="page__sub">Based on the last {{ days }} days of sales</p>{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-4">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>How the catalogue moves</h3></div>
+      <div class="card-x__body">
+        {% if mix %}{% include "inventory/_donut.html" with donut=mix chart_label="How items move" %}
+        {% else %}{% include "inventory/_empty.html" with icon="i-chart" title="No sales to look at yet" %}{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>Best sellers</h3>
+        <span class="spacer text-muted" style="font-size:12px">quantity in {{ days }} days</span></div>
+      <div class="card-x__body">
+        {% if best %}{% include "inventory/_hbars.html" with bars=best %}
+        {% else %}{% include "inventory/_empty.html" with icon="i-cart" title="Nothing sold yet" %}{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card-x h-100">
+      <div class="card-x__body">
+        <span class="stat-tile__label">Money stuck in stock nobody buys</span>
+        <div class="kpi__value tabular mt-1 text-danger">{{ dead_value|floatformat:0 }} <small>TZS</small></div>
+        <p class="text-muted mt-2 mb-0" style="font-size:12.5px">
+          Sitting in {{ counts.DEAD }} item{{ counts.DEAD|pluralize }} that have not sold in
+          {{ days }} days. Either discount them or stop reordering them — the cash is
+          doing nothing where it is.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<form class="card-x mb-3" method="get">
+  <div class="card-x__body filters">
+    <input name="days" value="{{ days }}" type="number" min="7" class="form-control" aria-label="Days">
+    <select name="class" class="form-select">
+      <option value="">Show everything</option>
+      <option value="FAST" {% if classification == 'FAST' %}selected{% endif %}>Sells fast</option>
+      <option value="NORMAL" {% if classification == 'NORMAL' %}selected{% endif %}>Normal</option>
+      <option value="SLOW" {% if classification == 'SLOW' %}selected{% endif %}>Sells slowly</option>
+      <option value="DEAD" {% if classification == 'DEAD' %}selected{% endif %}>Not selling</option>
+    </select>
+    <div class="filters__go"><button class="btn-x btn-x--primary w-100">Apply</button></div>
+  </div>
+</form>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Item</th><th>Group</th><th class="num">Sold in {{ days }} days</th>
+        <th class="num">In stock</th><th>How it moves</th><th class="num">Last sold</th>
+        <th class="num">Money in stock</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td><a href="{% url 'inventory:item_detail' row.item.pk %}">{{ row.item.name }}</a>
+            <div class="text-muted" style="font-size:12.5px">{{ row.item.code }}</div></td>
+          <td data-label="Group" class="text-muted">{{ row.item.category.name }}</td>
+          <td data-label="Sold" class="num tabular">{{ row.quantity_sold|floatformat:2 }}</td>
+          <td data-label="In stock" class="num tabular">{{ row.item.quantity_on_hand|floatformat:2 }}</td>
+          <td data-label="How it moves">
+            <span class="chip
+              {% if row.classification == 'FAST' %}chip--success
+              {% elif row.classification == 'NORMAL' %}chip--primary
+              {% elif row.classification == 'SLOW' %}chip--warning
+              {% else %}chip--danger{% endif %}">{{ row.label }}</span></td>
+          <td data-label="Last sold" class="num">
+            {% if row.days_since_last_sale %}{{ row.days_since_last_sale }} days ago{% else %}never{% endif %}</td>
+          <td data-label="Money in stock" class="num tabular">{{ row.stock_value|floatformat:0 }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">{% include "inventory/_empty.html" with icon="i-chart" title="Nothing to show" text="Sell some stock and this fills in." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+<div class="card">
+<div class="table-wrap"><table class="table mb-0">
+  <thead><tr><th>Item</th><th>Description</th><th class="text-end">Qty</th>
+    <th class="text-end">Price each</th><th class="text-end">Discount %</th><th class="text-end">Total</th></tr></thead>
+  <tbody>
+  {% for line in doc.lines.all %}
+    <tr>
+      <td>{{ line.item.code }}</td>
+      <td>{{ line.description|default:line.item.name }}</td>
+      <td class="text-end">{{ line.quantity|floatformat:2 }} {{ line.item.unit }}</td>
+      <td class="text-end">{{ line.unit_price|floatformat:2 }}</td>
+      <td class="text-end">{{ line.discount_percent|floatformat:1 }}</td>
+      <td class="text-end">{{ line.line_total|floatformat:2 }}</td>
+    </tr>
+  {% empty %}<tr><td colspan="6" class="p-3 text-muted">Nothing added yet.</td></tr>{% endfor %}
+  </tbody>
+  <tfoot class="table-light">
+    <tr><th colspan="5" class="text-end">Before VAT</th><th class="text-end">{{ doc.subtotal|floatformat:2 }}</th></tr>
+    <tr><th colspan="5" class="text-end">VAT</th><th class="text-end">{{ doc.vat_amount|floatformat:2 }}</th></tr>
+    <tr><th colspan="5" class="text-end">Total to pay</th><th class="text-end">{{ doc.grand_total|floatformat:2 }}</th></tr>
+  </tfoot>
+</table></div>
+</div>

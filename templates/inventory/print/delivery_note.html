@@ -1,0 +1,34 @@
+{% extends "inventory/print/_base.html" %}
+{% block doc_meta %}
+  {% if doc.invoice %}<div class="muted">Invoice</div><strong>{{ doc.invoice.reference }}</strong><br>{% endif %}
+  {% if doc.vehicle_number %}<div class="muted" style="margin-top:6px">Vehicle</div>{{ doc.vehicle_number }}{% endif %}
+{% endblock %}
+{% block doc_body %}{% with show_price=False %}<table>
+  <thead><tr><th>#</th><th>Item</th><th>Description</th><th class="right">Qty</th>
+    {% if show_price %}<th class="right">Unit price</th><th class="right">Amount</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for line in doc.lines.all %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ line.item.code }}{% if line.item.part_number %}<br><span class="muted">{{ line.item.part_number }}</span>{% endif %}</td>
+      <td>{{ line.description|default:line.item.name }}</td>
+      <td class="right">{{ line.quantity|floatformat:2 }} {{ line.item.unit }}</td>
+      {% if show_price %}
+        <td class="right">{{ line.unit_price|floatformat:2 }}</td>
+        <td class="right">{{ line.line_total|floatformat:2 }}</td>
+      {% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if show_price %}
+<table class="totals" style="width:45%;margin-left:55%">
+  <tr><td>Subtotal</td><td class="right">{{ doc.subtotal|floatformat:2 }}</td></tr>
+  <tr><td>VAT 18%</td><td class="right">{{ doc.vat_amount|floatformat:2 }}</td></tr>
+  <tr class="grand"><td>TOTAL (TZS)</td><td class="right">{{ doc.grand_total|floatformat:2 }}</td></tr>
+</table>
+{% endif %}
+{% endwith %}{% endblock %}
+{% block sign_right %}Goods received in good condition{% endblock %}
+{% block footer_note %}Please check the goods before signing. Shortages or damage must be reported within 48 hours.{% endblock %}

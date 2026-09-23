@@ -1,0 +1,219 @@
+{% load static %}<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ nav_title|default:"Dashboard" }}{% endblock %} · Tryvis Inventory</title>
+  <meta name="theme-color" content="#0F172A">
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <script>
+    /* set the theme before first paint so dark mode never flashes white */
+    (function () {
+      try {
+        var t = localStorage.getItem("tryvis-theme") || "dark";
+        if (t === "system") {
+          t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+
+{% include "inventory/_icons.html" %}
+
+<div class="shell" id="app">
+
+  <aside class="sidebar">
+    <div class="sidebar__brand">
+      <img src="data:image/png;base64,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" alt="Tryvis Investments Limited" class="sidebar__logo">
+      <button class="sidebar__close" id="drawerClose" aria-label="Close the menu">
+        <svg><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <nav class="sidebar__nav">
+      {% with n=nav_key %}
+      <div class="nav-group">
+        <div class="nav-group__label">Overview</div>
+        <a class="nav-link-x {% if n == 'dashboard' %}is-active{% endif %}" data-label="Dashboard" href="{% url 'inventory:dashboard' %}">
+          <svg><use href="#i-grid"/></svg><span class="nav-link-x__text">Dashboard</span>
+        </a>
+        {% if is_manager %}
+        <a class="nav-link-x {% if n == 'briefing' %}is-active{% endif %}" data-label="The briefing" href="{% url 'inventory:briefing' %}">
+          <svg><use href="#i-spark"/></svg><span class="nav-link-x__text">The briefing</span>
+        </a>
+        {% endif %}
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group__label">Stock</div>
+        <a class="nav-link-x {% if n == 'items' %}is-active{% endif %}" data-label="All items" href="{% url 'inventory:item_list' %}">
+          <svg><use href="#i-box"/></svg><span class="nav-link-x__text">All items</span>
+        </a>
+        <a class="nav-link-x {% if n == 'low' %}is-active{% endif %}" data-label="Running out" href="{% url 'inventory:report_low_stock' %}">
+          <svg><use href="#i-alert"/></svg><span class="nav-link-x__text">Running out</span>
+          {% if nav_counts.low %}<span class="nav-badge nav-badge--danger">{{ nav_counts.low }}</span>{% endif %}
+        </a>
+        <a class="nav-link-x {% if n == 'adjust' %}is-active{% endif %}" data-label="Fix stock count" href="{% url 'inventory:stock_adjust' %}">
+          <svg><use href="#i-sliders"/></svg><span class="nav-link-x__text">Fix stock count</span>
+        </a>
+        <a class="nav-link-x {% if n == 'history' %}is-active{% endif %}" data-label="Stock history" href="{% url 'inventory:movement_list' %}">
+          <svg><use href="#i-clock"/></svg><span class="nav-link-x__text">Stock history</span>
+        </a>
+        {% if is_manager %}
+        <a class="nav-link-x {% if n == 'purchases' %}is-active{% endif %}" data-label="Stock received" href="{% url 'inventory:purchase_list' %}">
+          <svg><use href="#i-truck"/></svg><span class="nav-link-x__text">Stock received</span>
+        </a>
+        {% endif %}
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group__label">Sales</div>
+        <a class="nav-link-x {% if n == 'quotations' %}is-active{% endif %}" data-label="Quotations" href="{% url 'inventory:quotation_list' %}">
+          <svg><use href="#i-file"/></svg><span class="nav-link-x__text">Quotations</span>
+          {% if nav_counts.quotations %}<span class="nav-badge">{{ nav_counts.quotations }}</span>{% endif %}
+        </a>
+        <a class="nav-link-x {% if n == 'invoices' %}is-active{% endif %}" data-label="Invoices" href="{% url 'inventory:invoice_list' %}">
+          <svg><use href="#i-receipt"/></svg><span class="nav-link-x__text">Invoices</span>
+          {% if nav_counts.invoices %}<span class="nav-badge nav-badge--warning">{{ nav_counts.invoices }}</span>{% endif %}
+        </a>
+        <a class="nav-link-x {% if n == 'deliveries' %}is-active{% endif %}" data-label="Delivery notes" href="{% url 'inventory:delivery_list' %}">
+          <svg><use href="#i-send"/></svg><span class="nav-link-x__text">Delivery notes</span>
+        </a>
+        <a class="nav-link-x {% if n == 'customers' %}is-active{% endif %}" data-label="Customers" href="{% url 'inventory:customer_list' %}">
+          <svg><use href="#i-users"/></svg><span class="nav-link-x__text">Customers</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group__label">Workshop</div>
+        <a class="nav-link-x {% if n == 'jobs' %}is-active{% endif %}" data-label="Workshop jobs" href="{% url 'inventory:job_list' %}">
+          <svg><use href="#i-tool"/></svg><span class="nav-link-x__text">Workshop jobs</span>
+          {% if nav_counts.jobs %}<span class="nav-badge">{{ nav_counts.jobs }}</span>{% endif %}
+        </a>
+      </div>
+
+      {% if is_manager %}
+      <div class="nav-group">
+        <div class="nav-group__label">Reports</div>
+        <a class="nav-link-x {% if n == 'r-movement' %}is-active{% endif %}" data-label="What sells, what sits" href="{% url 'inventory:report_movement' %}">
+          <svg><use href="#i-chart"/></svg><span class="nav-link-x__text">What sells, what sits</span>
+        </a>
+        <a class="nav-link-x {% if n == 'r-value' %}is-active{% endif %}" data-label="Value of stock" href="{% url 'inventory:report_valuation' %}">
+          <svg><use href="#i-layers"/></svg><span class="nav-link-x__text">Value of stock</span>
+        </a>
+        <a class="nav-link-x {% if n == 'r-profit' %}is-active{% endif %}" data-label="Profit" href="{% url 'inventory:report_profit' %}">
+          <svg><use href="#i-trend"/></svg><span class="nav-link-x__text">Profit</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group__label">Setup</div>
+        <a class="nav-link-x {% if n == 'users' %}is-active{% endif %}" data-label="People" href="{% url 'inventory:user_list' %}">
+          <svg><use href="#i-shield"/></svg><span class="nav-link-x__text">People</span>
+        </a>
+        <a class="nav-link-x {% if n == 'categories' %}is-active{% endif %}" data-label="Groups" href="{% url 'inventory:category_list' %}">
+          <svg><use href="#i-folder"/></svg><span class="nav-link-x__text">Groups</span>
+        </a>
+        <a class="nav-link-x {% if n == 'suppliers' %}is-active{% endif %}" data-label="Suppliers" href="{% url 'inventory:supplier_list' %}">
+          <svg><use href="#i-truck"/></svg><span class="nav-link-x__text">Suppliers</span>
+        </a>
+        <a class="nav-link-x {% if n == 'units' %}is-active{% endif %}" data-label="Units" href="{% url 'inventory:unit_list' %}">
+          <svg><use href="#i-ruler"/></svg><span class="nav-link-x__text">Units</span>
+        </a>
+      </div>
+      {% endif %}
+      {% endwith %}
+    </nav>
+  </aside>
+
+  <div class="scrim" id="scrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn" id="sidebarToggle" aria-label="Show or hide the menu"
+              aria-controls="app" aria-expanded="false">
+        <svg><use href="#i-menu"/></svg>
+      </button>
+
+      <div class="crumb d-none d-sm-block">
+        Tryvis Inventory
+        <b>{% block heading %}{{ nav_title|default:"Dashboard" }}{% endblock %}</b>
+      </div>
+
+      <div class="search">
+        <svg class="search__icon"><use href="#i-search"/></svg>
+        <input class="search__input" id="globalSearch" type="search" autocomplete="off"
+               placeholder="Search items, part numbers, customers, invoices…"
+               aria-label="Search the whole system">
+        <span class="search__kbd">Ctrl K</span>
+        <div class="search__results" id="searchResults" data-url="{% url 'inventory:search' %}" role="listbox"></div>
+      </div>
+
+      <div class="dropdown">
+        <button class="user-chip" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="avatar">{{ request.user.username|slice:":2"|upper }}</span>
+          <span class="text-start">
+            <span class="user-chip__name d-block">{{ request.user.get_full_name|default:request.user.username }}</span>
+            <span class="user-chip__role d-block">{% if is_manager %}Manager{% else %}Shopkeeper{% endif %}</span>
+          </span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:214px">
+          <li><h6 class="dropdown-header">Appearance</h6></li>
+          <li><a class="dropdown-item" href="#" data-theme-choice="light">Light</a></li>
+          <li><a class="dropdown-item" href="#" data-theme-choice="dark">Dark</a></li>
+          <li><a class="dropdown-item" href="#" data-theme-choice="system">Match my device</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="{% url 'password_change' %}">Change my password</a></li>
+          {% if request.user.is_superuser %}
+            <li><a class="dropdown-item" href="/admin/">Technical admin</a></li>
+          {% endif %}
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <form method="post" action="{% url 'logout' %}" class="px-3 py-1">
+              {% csrf_token %}
+              <button class="btn-x btn-x--sm w-100 justify-content-center">Sign out</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <main class="page">
+      {% block page %}
+        <div class="page__head">
+          <div>
+            <h1 class="page__title">{% block page_title %}{{ nav_title }}{% endblock %}</h1>
+            {% block page_sub %}{% endblock %}
+          </div>
+          <div class="page__actions">{% block actions %}{% endblock %}</div>
+        </div>
+        {% block content %}{% endblock %}
+      {% endblock %}
+    </main>
+  </div>
+</div>
+
+{% if messages %}
+<div class="toasts">
+  {% for message in messages %}
+    <div class="toast-x toast-x--{{ message.tags|default:'info' }}" role="status">
+      <svg class="toast-x__mark"><use href="#i-check-circle"/></svg>
+      <div>{{ message }}</div>
+      <button aria-label="Close">&times;</button>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script src="{% static 'js/ui.js' %}" defer></script>
+<script src="{% static 'js/app.js' %}" defer></script>
+{% if user.is_authenticated %}
+<script src="https://www.jamiitek.com/chatbot/widget/bd8ea889-7a61-4a48-9579-44400d419517.js" defer></script>
+{% endif %}
+<script src="{% static 'js/app.js' %}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,7 @@
+{% comment %}Shared empty state. icon / title / text / action_url / action_label{% endcomment %}
+<div class="empty">
+  <div class="empty__icon"><svg><use href="#{{ icon|default:'i-inbox' }}"/></svg></div>
+  <h4>{{ title }}</h4>
+  {% if text %}<p>{{ text }}</p>{% endif %}
+  {% if action_url %}<a class="btn-x btn-x--primary btn-x--sm" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+</div>

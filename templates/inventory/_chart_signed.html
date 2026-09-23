@@ -1,0 +1,13 @@
+{% comment %}bars above and below zero: chart{% endcomment %}
+{% if chart %}
+<svg class="chart" viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img"
+     aria-label="{{ chart_label|default:'Profit and loss' }}">
+  <line x1="0" y1="{{ chart.baseline }}" x2="{{ chart.width }}" y2="{{ chart.baseline }}"
+        stroke="var(--border)" stroke-width="1"/>
+  {% for bar in chart.bars %}
+    <rect x="{{ bar.x }}" y="{{ bar.y }}" width="{{ bar.w }}" height="{{ bar.h }}" rx="2.5"
+          fill="{{ bar.tone }}"><title>{{ bar.title }}</title></rect>
+  {% endfor %}
+</svg>
+<div class="chart-labels">{% for p in chart.labels %}<span>{{ p.text }}</span>{% endfor %}</div>
+{% endif %}

@@ -1,0 +1,67 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Running out{% endblock %}
+{% block actions %}
+  {% if is_manager and items %}
+    <a class="btn-x btn-x--primary" href="{% url 'inventory:purchase_create' %}">
+      <svg><use href="#i-truck"/></svg>Record stock received</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="stat-strip h-100">
+      <div class="stat-tile {% if items %}stat-tile--warning{% else %}stat-tile--success{% endif %}">
+        <span class="stat-tile__label">Need ordering</span>
+        <div class="stat-tile__value tabular">{{ items|length }}</div>
+      </div>
+      <div class="stat-tile {% if out %}stat-tile--danger{% endif %}">
+        <span class="stat-tile__label">Finished</span>
+        <div class="stat-tile__value tabular">{{ out }}</div>
+        <div class="stat-tile__foot">nothing on the shelf</div>
+      </div>
+      {% if is_manager %}
+      <div class="stat-tile">
+        <span class="stat-tile__label">Cost to restock</span>
+        <div class="stat-tile__value tabular">{{ value_to_order|floatformat:0 }} <small>TZS</small></div>
+        <div class="stat-tile__foot">at what they cost last time</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>How far below the line</h3></div>
+      <div class="card-x__body">
+        {% if shortfalls %}{% include "inventory/_hbars.html" with bars=shortfalls %}
+        {% else %}{% include "inventory/_empty.html" with icon="i-check-circle" title="Nothing is running out" text="Every item is above the level you set." %}{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Item</th><th>Code</th><th>Group</th><th class="num">In stock</th>
+        <th class="num">Alert at</th><th class="num">Order this many</th><th>Where it is</th></tr></thead>
+      <tbody>
+      {% for item in items %}
+        <tr>
+          <td><a href="{% url 'inventory:item_detail' item.pk %}">{{ item.name }}</a></td>
+          <td data-label="Code" class="text-muted">{{ item.code }}</td>
+          <td data-label="Group" class="text-muted">{{ item.category.name }}</td>
+          <td data-label="In stock" class="num text-danger fw-bold">
+            {{ item.quantity_on_hand|floatformat:2 }} {{ item.unit }}</td>
+          <td data-label="Alert at" class="num">{{ item.minimum_level|floatformat:2 }}</td>
+          <td data-label="Order this many" class="num tabular">{{ item.reorder_quantity|floatformat:2 }}</td>
+          <td data-label="Where it is" class="text-muted">{{ item.location|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">{% include "inventory/_empty.html" with icon="i-check-circle" title="Nothing is running out" text="All good. Come back when something drops." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

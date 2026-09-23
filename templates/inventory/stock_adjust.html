@@ -1,0 +1,23 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Fix stock count{% endblock %}
+{% block content %}
+<form method="post" class="card p-4" style="max-width:640px">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+  {% for field in form %}
+    <div class="mb-3">
+      <label class="form-label small fw-semibold">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+  {% endfor %}
+  <button class="btn btn-primary">Save</button>
+  <p class="text-muted small mt-3 mb-0">
+    Use this when you count the shelf and the number is wrong, or when you first
+    enter what is already in the store. Stock you buy should go through
+    <strong>Stock received</strong>, and stock you sell through a
+    <strong>delivery note</strong>, so the paper and the system always agree.
+  </p>
+</form>
+{% endblock %}

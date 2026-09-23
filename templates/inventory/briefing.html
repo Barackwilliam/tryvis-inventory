@@ -1,0 +1,74 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}The briefing{% endblock %}
+{% block page_sub %}
+<p class="page__sub">
+  Written {{ written_at|date:"l j F, H:i" }} ·
+  {% if source == 'grok' %}phrased by Grok{% else %}written by the system{% endif %}
+</p>
+{% endblock %}
+{% block actions %}
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:briefing_refresh' %}">
+    <svg><use href="#i-refresh"/></svg>Write a new one</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="brief mb-3">
+      <div class="brief__head">
+        <span class="brief__mark"><svg><use href="#i-spark"/></svg></span>
+        <div><b>How the business stands</b>
+          <span class="brief__meta">{{ written_at|date:"j M Y, H:i" }}</span></div>
+      </div>
+      <div class="brief__body">
+        {% for paragraph in paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="card-x">
+      <div class="card-x__head"><h3>Earlier briefings</h3></div>
+      <div>
+        {% for item in history %}
+          <div class="alert-row" style="cursor:default">
+            <span class="alert-row__main">
+              <span class="alert-row__name">{{ item.text|truncatewords:18 }}</span>
+              <span class="alert-row__meta">{{ item.created_at|date:"j M Y, H:i" }}</span>
+            </span>
+            <span class="chip {% if item.source == 'grok' %}chip--primary{% else %}chip--muted{% endif %}">
+              {{ item.get_source_display }}</span>
+          </div>
+        {% empty %}
+          {% include "inventory/_empty.html" with icon="i-spark" title="Nothing earlier yet" text="Briefings are kept as the figures change." %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card-x">
+      <div class="card-x__head">
+        <h3>The figures it was written from</h3>
+      </div>
+      <div class="card-x__body" style="padding-top:8px">
+        <p class="text-muted mb-3" style="font-size:12.5px">
+          Every number below was worked out from your own records before the briefing
+          was written. The writer is given these and nothing else — it cannot add a
+          figure of its own.
+        </p>
+        <div class="table-wrap">
+          <table class="table-x">
+            <tbody>
+            {% for row in fact_rows %}
+              <tr>
+                <td class="text-muted" style="width:54%">{{ row.label }}</td>
+                <td class="num tabular">{{ row.value }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

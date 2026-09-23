@@ -1,0 +1,103 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}{{ item.name }}{% endblock %}
+{% block page_sub %}<p class="page__sub">{{ item.code }}{% if item.part_number %} &middot; part number {{ item.part_number }}{% endif %}</p>{% endblock %}
+{% block actions %}
+  <a class="btn-x" href="{% url 'inventory:stock_adjust' %}">Fix the count</a>
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:item_edit' item.pk %}">Edit</a>
+{% endblock %}
+
+{% block content %}
+<div class="stat-strip mb-3">
+  <div class="stat-tile {% if item.is_below_minimum %}stat-tile--danger{% endif %}">
+    <span class="stat-tile__label">In stock</span>
+    <div class="stat-tile__value tabular">{{ item.quantity_on_hand|floatformat:2 }} <small>{{ item.unit }}</small></div>
+    <div class="stat-tile__foot">
+      {% if item.is_below_minimum %}below the alert level of {{ item.minimum_level|floatformat:0 }}
+      {% else %}alert at {{ item.minimum_level|floatformat:0 }}{% endif %}</div>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile__label">Came in</span>
+    <div class="stat-tile__value tabular">{{ received|floatformat:0 }}</div>
+    <div class="stat-tile__foot">across the movements below</div>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile__label">Went out</span>
+    <div class="stat-tile__value tabular">{{ issued|floatformat:0 }}</div>
+  </div>
+  {% if is_manager %}
+  <div class="stat-tile">
+    <span class="stat-tile__label">Value in store</span>
+    <div class="stat-tile__value tabular">{{ item.stock_value|floatformat:0 }} <small>TZS</small></div>
+    <div class="stat-tile__foot">{{ item.average_cost|floatformat:0 }} each</div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-7">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>Stock level over time</h3>
+        <span class="spacer text-muted" style="font-size:12px">from the movement history</span></div>
+      <div class="card-x__body">
+        {% if level_chart %}
+          {% include "inventory/_chart_line.html" with chart=level_chart chart_label="Stock level over time" %}
+        {% else %}
+          {% include "inventory/_empty.html" with icon="i-clock" title="Not enough history yet" text="The line appears once this item has moved a few times." %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>Details</h3></div>
+      <div class="card-x__body">
+        <div class="table-wrap"><table class="table-x">
+          <tbody>
+            <tr><td class="text-muted">Group</td><td class="num">{{ item.category.name }}</td></tr>
+            <tr><td class="text-muted">Kind</td><td class="num">{{ item.get_item_type_display }}</td></tr>
+            <tr><td class="text-muted">Sold by</td><td class="num">{{ item.unit.name }}</td></tr>
+            <tr><td class="text-muted">Where it is</td><td class="num">{{ item.location|default:"-" }}</td></tr>
+            <tr><td class="text-muted">Order this many</td><td class="num">{{ item.reorder_quantity|floatformat:0 }}</td></tr>
+            <tr><td class="text-muted">Price each</td><td class="num tabular">{{ item.selling_price|floatformat:2 }}</td></tr>
+            {% if is_manager %}
+              <tr><td class="text-muted">Cost each</td><td class="num tabular">{{ item.average_cost|floatformat:2 }}</td></tr>
+              <tr><td class="text-muted">Last time we paid</td><td class="num tabular">{{ item.last_purchase_cost|floatformat:2 }}</td></tr>
+              <tr><td class="text-muted">Profit on each</td>
+                  <td class="num tabular">{{ item.margin_percent|floatformat:1|default:"-" }}%</td></tr>
+            {% endif %}
+          </tbody>
+        </table></div>
+        {% if item.description %}
+          <p class="text-muted mt-3 mb-0" style="font-size:12.5px">{{ item.description }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card-x">
+  <div class="card-x__head"><h3>Everything that happened to this item</h3></div>
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Date</th><th>What happened</th><th class="num">Qty</th><th class="num">Left</th>
+        {% if is_manager %}<th class="num">Cost each</th>{% endif %}<th>Paper</th><th>Who</th></tr></thead>
+      <tbody>
+      {% for m in movements %}
+        <tr>
+          <td>{{ m.movement_date|date:"d M Y" }}</td>
+          <td data-label="What happened">{{ m.get_movement_type_display }}</td>
+          <td data-label="Qty" class="num tabular {% if m.is_inward %}text-success{% else %}text-danger{% endif %}">
+            {% if m.is_inward %}+{% else %}-{% endif %}{{ m.quantity|floatformat:2 }}</td>
+          <td data-label="Left" class="num tabular">{{ m.balance_after|floatformat:2 }}</td>
+          {% if is_manager %}<td data-label="Cost each" class="num tabular">{{ m.unit_cost|floatformat:2 }}</td>{% endif %}
+          <td data-label="Paper" class="text-muted">{{ m.source_reference|default:"-" }}</td>
+          <td data-label="Who" class="text-muted">{{ m.created_by|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">{% include "inventory/_empty.html" with icon="i-clock" title="Nothing has happened to this item yet" %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

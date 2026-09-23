@@ -1,0 +1,48 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Delivery notes{% endblock %}
+{% block actions %}
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:delivery_create' %}"><svg><use href="#i-plus"/></svg>New delivery note</a>
+{% endblock %}
+
+{% block content %}
+<div class="stat-strip mb-3">
+  <div class="stat-tile {% if summary.waiting %}stat-tile--warning{% endif %}">
+    <span class="stat-tile__label">Still in the store</span>
+    <div class="stat-tile__value tabular">{{ summary.waiting }}</div>
+    <div class="stat-tile__foot">written but not handed over</div>
+  </div>
+  <div class="stat-tile stat-tile--success">
+    <span class="stat-tile__label">Handed over</span>
+    <div class="stat-tile__value tabular">{{ summary.delivered }}</div>
+  </div>
+  <div class="stat-tile">
+    <span class="stat-tile__label">This month</span>
+    <div class="stat-tile__value tabular">{{ summary.this_month }}</div>
+  </div>
+</div>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Delivery note</th><th>Customer</th><th>Date</th>
+        <th>Invoice</th><th>Status</th><th>Given to</th></tr></thead>
+      <tbody>
+      {% for n in notes %}
+        <tr>
+          <td><a href="{% url 'inventory:delivery_detail' n.pk %}">{{ n.reference }}</a></td>
+          <td data-label="Customer">{{ n.customer.name }}</td>
+          <td data-label="Date">{{ n.document_date|date:"d M Y" }}</td>
+          <td data-label="Invoice">{{ n.invoice.reference|default:"-" }}</td>
+          <td data-label="Status">
+            <span class="chip {% if n.status == 'DELIVERED' %}chip--success{% else %}chip--warning{% endif %}">
+              {{ n.get_status_display }}</span></td>
+          <td data-label="Given to">{{ n.delivered_to|default:"-" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">{% include "inventory/_empty.html" with icon="i-send" title="No delivery notes yet" text="They are created from an invoice when the goods go out." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

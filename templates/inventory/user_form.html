@@ -1,0 +1,40 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block content %}
+<form method="post" class="card-x" style="max-width:720px">
+  {% csrf_token %}
+  <div class="card-x__body">
+    {% if editing_self %}
+      <div class="chip chip--warning mb-3">You are editing your own account</div>
+    {% endif %}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <div class="row g-3">
+      {% for field in form %}
+        <div class="{% if field.field.widget.input_type == 'checkbox' %}col-12{% else %}col-md-6{% endif %}">
+          {% if field.field.widget.input_type == 'checkbox' %}
+            <div class="form-check">
+              {{ field }}
+              <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            </div>
+          {% else %}
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+          {% endif %}
+          {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+          {% for error in field.errors %}<div class="text-danger" style="font-size:12.5px">{{ error }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card-x__foot d-flex gap-2">
+    <button class="btn-x btn-x--primary">Save</button>
+    <a class="btn-x" href="{% url 'inventory:user_list' %}">Cancel</a>
+    {% if person and not is_new %}
+      <a class="btn-x ms-auto" href="{% url 'inventory:user_password' person.pk %}">
+        <svg><use href="#i-key"/></svg>Set a new password</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

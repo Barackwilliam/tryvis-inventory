@@ -1,0 +1,62 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Value of stock{% endblock %}
+{% block page_sub %}<p class="page__sub">What everything on the shelf is worth, at what it cost you</p>{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-4">
+    <div class="card-x h-100">
+      <div class="card-x__body">
+        <span class="stat-tile__label">Total value</span>
+        <div class="kpi__value tabular mt-1">{{ total|floatformat:0 }} <small>TZS</small></div>
+        <p class="text-muted mt-2 mb-0" style="font-size:12.5px">
+          Across {{ items|length }} item{{ items|length|pluralize }} in {{ category_count }} group{{ category_count|pluralize }}.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>By group</h3></div>
+      <div class="card-x__body">
+        {% if mix %}{% include "inventory/_donut.html" with donut=mix chart_label="Value by group" %}
+        {% else %}{% include "inventory/_empty.html" with icon="i-layers" title="Nothing in stock" %}{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>Biggest holdings</h3></div>
+      <div class="card-x__body">
+        {% if top_items %}{% include "inventory/_hbars.html" with bars=top_items %}
+        {% else %}{% include "inventory/_empty.html" with icon="i-box" title="Nothing to show" %}{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Item</th><th>Group</th><th>Code</th><th class="num">In stock</th>
+        <th class="num">Cost each</th><th class="num">Value</th></tr></thead>
+      <tbody>
+      {% for item in items %}
+        <tr>
+          <td><a href="{% url 'inventory:item_detail' item.pk %}">{{ item.name }}</a></td>
+          <td data-label="Group" class="text-muted">{{ item.category.name }}</td>
+          <td data-label="Code" class="text-muted">{{ item.code }}</td>
+          <td data-label="In stock" class="num">{{ item.quantity_on_hand|floatformat:2 }} {{ item.unit }}</td>
+          <td data-label="Cost each" class="num tabular">{{ item.average_cost|floatformat:2 }}</td>
+          <td data-label="Value" class="num tabular">{{ item.stock_value|floatformat:0 }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">{% include "inventory/_empty.html" with icon="i-box" title="No stock items" %}</td></tr>
+      {% endfor %}
+      </tbody>
+      <tfoot><tr><th colspan="5" class="text-end">Total</th>
+        <th class="num tabular">{{ total|floatformat:0 }}</th></tr></tfoot>
+    </table>
+  </div>
+</div>
+{% endblock %}

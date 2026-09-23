@@ -1,0 +1,61 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Quotations{% endblock %}
+{% block actions %}
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:quotation_create' %}"><svg><use href="#i-plus"/></svg>New quotation</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-7">
+    <div class="stat-strip h-100">
+      <div class="stat-tile">
+        <span class="stat-tile__label">Waiting on customers</span>
+        <div class="stat-tile__value tabular">{{ summary.waiting }}</div>
+        {% if is_manager %}<div class="stat-tile__foot">{{ summary.waiting_value|floatformat:0 }} TZS on the table</div>{% endif %}
+      </div>
+      <div class="stat-tile stat-tile--success">
+        <span class="stat-tile__label">Turned into invoices</span>
+        <div class="stat-tile__value tabular">{{ summary.invoiced }}</div>
+        <div class="stat-tile__foot">{{ summary.win_rate }}% of all quotations</div>
+      </div>
+      <div class="stat-tile {% if summary.expired %}stat-tile--warning{% endif %}">
+        <span class="stat-tile__label">Expired</span>
+        <div class="stat-tile__value tabular">{{ summary.expired }}</div>
+        <div class="stat-tile__foot">past the date you gave</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card-x h-100">
+      <div class="card-x__head"><h3>How they end up</h3></div>
+      <div class="card-x__body">
+        {% if mix %}{% include "inventory/_donut.html" with donut=mix chart_label="Quotation outcomes" %}
+        {% else %}{% include "inventory/_empty.html" with icon="i-file" title="No quotations yet" %}{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Quotation</th><th>Customer</th><th>Date</th><th>Good until</th>
+        <th>Status</th><th class="num">Total</th></tr></thead>
+      <tbody>
+      {% for q in quotations %}
+        <tr>
+          <td><a href="{% url 'inventory:quotation_detail' q.pk %}">{{ q.reference }}</a></td>
+          <td data-label="Customer">{{ q.customer.name }}</td>
+          <td data-label="Date">{{ q.document_date|date:"d M Y" }}</td>
+          <td data-label="Good until">{{ q.valid_until|date:"d M Y"|default:"-" }}</td>
+          <td data-label="Status"><span class="chip chip--muted">{{ q.get_status_display }}</span></td>
+          <td data-label="Total" class="num tabular">{{ q.grand_total|floatformat:2 }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">{% include "inventory/_empty.html" with icon="i-file" title="No quotations yet" text="Price a job for a customer and it appears here." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

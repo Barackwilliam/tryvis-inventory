@@ -1,0 +1,9 @@
+{{ company_name }} - Low stock alert
+Generated {{ generated_at|date:"d F Y H:i" }}
+
+These items are running out:
+
+{% for item in items %}- {{ item.code }} | {{ item.name }}
+  In stock: {{ item.quantity_on_hand|floatformat:2 }} {{ item.unit }} | Alert at: {{ item.minimum_level|floatformat:2 }} | Order this many: {{ item.reorder_quantity|floatformat:2 }}
+{% endfor %}
+Sent automatically by the Tryvis stock system.

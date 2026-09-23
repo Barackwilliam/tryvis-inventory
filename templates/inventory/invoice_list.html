@@ -1,0 +1,64 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Invoices{% endblock %}
+{% block actions %}
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:invoice_create' %}"><svg><use href="#i-plus"/></svg>New invoice</a>
+{% endblock %}
+
+{% block content %}
+{% if show_money %}
+<div class="stat-strip mb-3">
+  <div class="stat-tile">
+    <span class="stat-tile__label">Money owed to us</span>
+    <div class="stat-tile__value tabular">{{ summary.outstanding|floatformat:0 }} <small>TZS</small></div>
+    <div class="stat-tile__foot">{{ summary.unpaid }} invoice{{ summary.unpaid|pluralize }} unpaid</div>
+  </div>
+  <div class="stat-tile {% if summary.overdue %}stat-tile--danger{% endif %}">
+    <span class="stat-tile__label">Past the due date</span>
+    <div class="stat-tile__value tabular">{{ summary.overdue }}</div>
+    <div class="stat-tile__foot">{{ summary.overdue_value|floatformat:0 }} TZS held up</div>
+  </div>
+  <div class="stat-tile stat-tile--success">
+    <span class="stat-tile__label">Collected this month</span>
+    <div class="stat-tile__value tabular">{{ summary.collected_this_month|floatformat:0 }} <small>TZS</small></div>
+  </div>
+</div>
+
+{% if money_chart %}
+<div class="card-x mb-3">
+  <div class="card-x__head"><h3>Billed against collected</h3>
+    <span class="spacer text-muted" style="font-size:12px">last 6 months</span></div>
+  <div class="card-x__body">
+    {% include "inventory/_chart_bars.html" with chart=money_chart chart_label="Billed and collected each month" %}
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x table--stack">
+      <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Pay by</th>
+        <th>Status</th><th class="num">Total</th><th class="num">Still owed</th></tr></thead>
+      <tbody>
+      {% for inv in invoices %}
+        <tr>
+          <td><a href="{% url 'inventory:invoice_detail' inv.pk %}">{{ inv.reference }}</a></td>
+          <td data-label="Customer">{{ inv.customer.name }}</td>
+          <td data-label="Date">{{ inv.document_date|date:"d M Y" }}</td>
+          <td data-label="Pay by">
+            {% if inv.is_overdue %}<span class="chip chip--danger">Late</span>
+            {% elif inv.due_date %}{{ inv.due_date|date:"d M Y" }}
+            {% else %}<span class="text-muted">-</span>{% endif %}</td>
+          <td data-label="Status"><span class="chip chip--muted">{{ inv.get_status_display }}</span></td>
+          <td data-label="Total" class="num tabular">{{ inv.grand_total|floatformat:2 }}</td>
+          <td data-label="Still owed" class="num tabular {% if inv.balance_due > 0 %}text-danger{% endif %}">
+            {{ inv.balance_due|floatformat:2 }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">{% include "inventory/_empty.html" with icon="i-receipt" title="No invoices yet" text="Turn an accepted quotation into an invoice, or start a new one." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

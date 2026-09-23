@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: tryvis-inventory
+    runtime: python
+    plan: starter
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --workers 2 --timeout 60"
+    healthCheckPath: /login/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - fromGroup: tryvis-inventory-env
+
+  - type: cron
+    name: tryvis-inventory-low-stock-alert
+    runtime: python
+    schedule: "0 5 * * 1-6"          # 08:00 East Africa time, Monday to Saturday
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python manage.py send_low_stock_alerts"
+    envVars:
+      - fromGroup: tryvis-inventory-env
+
+# Create the env group "tryvis-inventory-env" in the Render dashboard and put
+# the database and email variables there, so the web service and the cron job
+# always read the same values.

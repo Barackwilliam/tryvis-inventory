@@ -1,0 +1,58 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}People{% endblock %}
+{% block page_sub %}<p class="page__sub">Who can sign in, and what each of them is allowed to see.</p>{% endblock %}
+{% block actions %}
+  <a class="btn-x btn-x--primary" href="{% url 'inventory:user_create' %}"><svg><use href="#i-plus"/></svg>Add a person</a>
+{% endblock %}
+
+{% block content %}
+<div class="card-x">
+  <div class="table-wrap">
+    <table class="table-x">
+      <thead>
+        <tr><th>Person</th><th>Signs in as</th><th>What they can do</th>
+            <th>Email alerts</th><th>Last signed in</th><th></th></tr>
+      </thead>
+      <tbody>
+      {% for person in people %}
+        <tr {% if not person.is_active %}style="opacity:.55"{% endif %}>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="avatar">{{ person.username|slice:":2"|upper }}</span>
+              <span>
+                <b>{{ person.get_full_name|default:person.username }}</b>
+                {% if person.pk == request.user.pk %}<span class="chip chip--primary ms-1">You</span>{% endif %}
+                <div class="text-muted" style="font-size:12px">{{ person.email|default:"No email" }}</div>
+              </span>
+            </div>
+          </td>
+          <td class="text-muted">{{ person.username }}</td>
+          <td>
+            {% if person.is_manager %}
+              <span class="chip chip--primary">Manager</span>
+            {% else %}
+              <span class="chip chip--muted">Shopkeeper</span>
+            {% endif %}
+            {% if not person.is_active %}<span class="chip chip--dark ms-1">Switched off</span>{% endif %}
+          </td>
+          <td>{% if person.receives_stock_alerts %}<span class="chip chip--success">On</span>{% else %}<span class="text-muted">-</span>{% endif %}</td>
+          <td class="text-muted">{% if person.last_login %}{{ person.last_login|date:"d M Y, H:i" }}{% else %}Never{% endif %}</td>
+          <td class="num">
+            <a class="btn-x btn-x--sm" href="{% url 'inventory:user_edit' person.pk %}">Edit</a>
+            <a class="btn-x btn-x--sm" href="{% url 'inventory:user_password' person.pk %}">
+              <svg><use href="#i-key"/></svg>Password</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">{% include "inventory/_empty.html" with icon="i-users" title="Nobody yet" text="Add the manager and the shopkeepers." %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-x__foot text-muted" style="font-size:12.5px">
+    A Manager sees cost, profit, purchases and reports. A Shopkeeper works with stock,
+    quotations, invoices, delivery notes and jobs, but never sees what things cost.
+    Switch an account off rather than deleting it, so the history of who did what stays intact.
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "inventory/base.html" %}
+{% block page_title %}Search{% endblock %}
+{% block page_sub %}<p class="page__sub">Results for &ldquo;{{ term }}&rdquo;</p>{% endblock %}
+{% block content %}
+{% if groups %}
+  <div class="row g-3">
+  {% for group in groups %}
+    <div class="col-lg-6">
+      <div class="card-x h-100">
+        <div class="card-x__head"><h3>{{ group.label }}</h3></div>
+        <div>
+          {% for hit in group.items %}
+            <a class="alert-row" href="{{ hit.url }}">
+              <span class="alert-row__main"><span class="alert-row__name">{{ hit.title }}</span></span>
+              {% if hit.meta %}<span class="text-muted" style="font-size:12.5px">{{ hit.meta }}</span>{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+{% else %}
+  {% include "inventory/_empty.html" with icon="i-search" title="Nothing found" text="Try part of an item name, a part number, a customer or a document number." %}
+{% endif %}
+{% endblock %}

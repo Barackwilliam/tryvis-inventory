@@ -1,0 +1,22 @@
+<html><body style="font-family:Helvetica,Arial,sans-serif;color:#222">
+<h2 style="color:#0b3d5c;margin-bottom:4px">Low stock alert</h2>
+<p style="color:#666;margin-top:0">{{ company_name }} · {{ generated_at|date:"d F Y H:i" }}</p>
+<p>These items are running out:</p>
+<table cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%">
+  <thead><tr style="background:#0b3d5c;color:#fff;text-align:left">
+    <th>Code</th><th>Item</th><th align="right">In stock</th><th align="right">Alert at</th><th align="right">Order this many</th>
+  </tr></thead>
+  <tbody>
+  {% for item in items %}
+    <tr style="border-bottom:1px solid #e0e0e0">
+      <td>{{ item.code }}</td>
+      <td>{{ item.name }}</td>
+      <td align="right" style="color:#c0392b;font-weight:bold">{{ item.quantity_on_hand|floatformat:2 }} {{ item.unit }}</td>
+      <td align="right">{{ item.minimum_level|floatformat:2 }}</td>
+      <td align="right">{{ item.reorder_quantity|floatformat:2 }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p style="color:#888;font-size:12px;margin-top:20px">Sent automatically by the Tryvis stock system.</p>
+</body></html>
