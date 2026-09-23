@@ -374,3 +374,42 @@ class HelpDocument(TestCase):
             for path in ("/help/knowledge.txt", "/help/assistant.txt"):
                 self.assertEqual(Client().get(path).status_code, 404)
                 self.assertEqual(Client().get(f"{path}?k=shhh").status_code, 200)
+
+
+class PrintedDocuments(Base):
+    """What the customer actually hands over. Regressions here are visible to their clients."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = Client()
+        self.client.force_login(self.manager)
+
+    def test_colours_survive_the_print_button(self):
+        """BUG: browsers drop background colours unless told not to — the invoice printed grey."""
+        invoice = self.invoice_for(3)
+        body = self.client.get(f"/app/print/invoice/{invoice.pk}/").content.decode()
+        self.assertIn("print-color-adjust: exact", body)
+
+    def test_a_long_invoice_is_never_cut_off_when_printed(self):
+        """BUG: a fixed-height page with overflow hidden silently dropped the last lines and the total."""
+        body = self.client.get(f"/app/print/invoice/{self.invoice_for(3).pk}/").content.decode()
+        print_css = body[body.index("@media print"):]
+        print_css = print_css[:print_css.index("}\n  }") + 1]
+        self.assertNotIn("overflow: hidden", print_css)
+        self.assertNotIn("height: 296mm;", print_css.replace("min-height: 296mm;", ""))
+
+    def test_the_pdf_link_gives_the_same_page_as_print(self):
+        invoice = self.invoice_for(3)
+        response = self.client.get(f"/app/print/invoice/{invoice.pk}/?pdf=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "html2pdf.bundle.min.js")
+        self.assertContains(response, 'filename: "' + invoice.reference + '.pdf"')
+
+    def test_the_efd_qr_appears_on_the_printed_invoice(self):
+        invoice = self.invoice_for(3)
+        invoice.efd_qr_image = "data:image/png;base64,iVBORw0KGgo="
+        invoice.efd_receipt_number = "Z-04417-0003281"
+        invoice.save()
+        body = self.client.get(f"/app/print/invoice/{invoice.pk}/").content.decode()
+        self.assertIn("Z-04417-0003281", body)
+        self.assertIn("data:image/png;base64,iVBORw0KGgo=", body)

@@ -1,0 +1,7 @@
+<h4>Payment Info:</h4>
+<table class="pay">
+  <tr><td class="k">A/C Name:</td><td>{{ company.account_name|default:company.name }}</td></tr>
+  {% if company.bank_name %}<tr><td class="k">Bank:</td><td>{{ company.bank_name }}</td></tr>{% endif %}
+  {% if company.bank_account %}<tr><td class="k">Account #:</td><td>{{ company.bank_account }}</td></tr>{% endif %}
+  {% if company.tin %}<tr><td class="k">TIN:</td><td>{{ company.tin }}</td></tr>{% endif %}
+</table>

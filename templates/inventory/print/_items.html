@@ -1,0 +1,24 @@
+<table class="items">
+  <tr>
+    <th width="7%">SL.</th>
+    <th>Item Description</th>
+    {% if show_price %}<th width="17%" class="r">Price</th>{% endif %}
+    <th width="{% if show_price %}13%{% else %}20%{% endif %}" class="c">Qty.</th>
+    {% if show_price %}<th width="18%" class="r">Total</th>{% endif %}
+  </tr>
+  {% for line in doc.lines.all %}
+  <tr style="background:{% cycle '#FFFFFF' '#F1F2F4' %}">
+    <td>{{ forloop.counter }}</td>
+    <td>
+      {{ line.description|default:line.item.name }}
+      <div class="sub">{{ line.item.code }}{% if line.item.part_number %} &middot; {{ line.item.part_number }}{% endif %}</div>
+    </td>
+    {% if show_price %}<td class="r">{{ line.unit_price|floatformat:"2g" }}</td>{% endif %}
+    <td class="c">{{ line.quantity|floatformat:"-2" }}{% if not show_price %} {{ line.item.unit }}{% endif %}</td>
+    {% if show_price %}<td class="r">{{ line.line_total|floatformat:"2g" }}</td>{% endif %}
+  </tr>
+  {% endfor %}
+  {% if doc.lines.count < 4 and not doc.efd_qr_image %}
+  <tr class="filler"><td colspan="5">&nbsp;</td></tr>
+  {% endif %}
+</table>

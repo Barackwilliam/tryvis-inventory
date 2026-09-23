@@ -1,34 +1,36 @@
 {% extends "inventory/print/_base.html" %}
-{% block doc_meta %}
-  <div class="muted">Due date</div><strong>{{ doc.due_date|date:"d F Y"|default:"On receipt" }}</strong>
-  {% if doc.quotation %}<div class="muted" style="margin-top:6px">Ref. quotation {{ doc.quotation.reference }}</div>{% endif %}
-{% endblock %}
-{% block doc_body %}{% with show_price=True %}<table>
-  <thead><tr><th>#</th><th>Item</th><th>Description</th><th class="right">Qty</th>
-    {% if show_price %}<th class="right">Unit price</th><th class="right">Amount</th>{% endif %}</tr></thead>
-  <tbody>
-  {% for line in doc.lines.all %}
-    <tr>
-      <td>{{ forloop.counter }}</td>
-      <td>{{ line.item.code }}{% if line.item.part_number %}<br><span class="muted">{{ line.item.part_number }}</span>{% endif %}</td>
-      <td>{{ line.description|default:line.item.name }}</td>
-      <td class="right">{{ line.quantity|floatformat:2 }} {{ line.item.unit }}</td>
-      {% if show_price %}
-        <td class="right">{{ line.unit_price|floatformat:2 }}</td>
-        <td class="right">{{ line.line_total|floatformat:2 }}</td>
-      {% endif %}
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
+{% block to_label %}Invoice to:{% endblock %}
 
-{% if show_price %}
-<table class="totals" style="width:45%;margin-left:55%">
-  <tr><td>Subtotal</td><td class="right">{{ doc.subtotal|floatformat:2 }}</td></tr>
-  <tr><td>VAT 18%</td><td class="right">{{ doc.vat_amount|floatformat:2 }}</td></tr>
-  <tr class="grand"><td>TOTAL (TZS)</td><td class="right">{{ doc.grand_total|floatformat:2 }}</td></tr>
-</table>
+{% block doc_meta %}
+  <tr><td class="k">Invoice#</td><td class="v">{{ doc.reference }}</td></tr>
+  <tr><td class="k">Date</td><td class="v">{{ doc.document_date|date:"d / m / Y" }}</td></tr>
+  <tr><td class="k">Due</td><td class="v">{{ doc.due_date|date:"d / m / Y"|default:"On receipt" }}</td></tr>
+  {% if doc.quotation %}<tr><td class="k">Quotation</td><td class="v">{{ doc.quotation.reference }}</td></tr>{% endif %}
+{% endblock %}
+
+{% block items %}{% include "inventory/print/_items.html" with show_price=True %}{% endblock %}
+
+{% block notes %}
+  <h4>Thank you for your business</h4>
+  <p style="margin-bottom:4mm"></p>
+  <h4>Terms &amp; Conditions</h4>
+  <p>Payment is due {% if doc.due_date %}by {{ doc.due_date|date:"d M Y" }}{% else %}on receipt{% endif %}.
+     Goods remain the property of {{ company.name }} until paid for in full.</p>
+  {% include "inventory/print/_payment.html" %}
+{% endblock %}
+
+{% block totals %}
+{% include "inventory/print/_totals.html" with paid_rows=True %}
+{% if doc.efd_qr_image or doc.efd_receipt_number %}
+<table class="efd" width="100%"><tr>
+  {% if doc.efd_qr_image %}<td width="27mm" style="padding-left:8mm"><img src="{{ doc.efd_qr_image }}" alt="EFD QR code"></td>{% endif %}
+  <td style="padding-left:4mm;padding-right:16mm">
+    <div class="t">TRA Fiscal Receipt</div>
+    <div class="s">
+      {% if doc.efd_receipt_number %}No. <b>{{ doc.efd_receipt_number }}</b><br>{% endif %}
+      Scan to verify with TRA
+    </div>
+  </td>
+</tr></table>
 {% endif %}
-{% endwith %}{% endblock %}
-{% block sign_right %}Received by{% endblock %}
-{% block footer_note %}Payment to {{ company.name }}. Goods remain the property of {{ company.name }} until paid for in full.{% endblock %}
+{% endblock %}

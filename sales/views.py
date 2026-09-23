@@ -10,7 +10,6 @@ from django.utils import timezone
 from accounts.models import user_is_manager
 from accounts.permissions import inventory_required
 from inventory import charts
-from core.pdf import render_pdf
 from sales.forms import (
     CustomerForm, DeliveryNoteForm, DeliveryNoteLineFormSet, InvoiceForm,
     InvoiceLineFormSet, PaymentForm, QuotationForm, QuotationLineFormSet,
@@ -219,6 +218,41 @@ def invoice_detail(request, pk):
 
 
 @inventory_required
+def invoice_efd_save(request, pk):
+    """
+    Receives the EFD receipt number and QR image (base64 data-URL) via POST.
+    The QR image is stored in the database as a text field — no file upload
+    infrastructure needed, and it travels with the invoice everywhere.
+    """
+    if request.method != "POST":
+        return redirect("inventory:invoice_detail", pk=pk)
+    invoice = get_object_or_404(Invoice, pk=pk)
+
+    receipt_number = request.POST.get("efd_receipt_number", "").strip()
+    qr_image = request.POST.get("efd_qr_image", "").strip()
+
+    if receipt_number:
+        invoice.efd_receipt_number = receipt_number
+    if qr_image and qr_image.startswith("data:image/"):
+        invoice.efd_qr_image = qr_image
+
+    invoice.save(update_fields=["efd_receipt_number", "efd_qr_image"])
+    messages.success(request, "EFD information saved. It will appear on the printed invoice.")
+    return redirect("inventory:invoice_detail", pk=pk)
+
+
+@inventory_required
+def invoice_efd_clear(request, pk):
+    """Remove the EFD QR and receipt number from this invoice."""
+    invoice = get_object_or_404(Invoice, pk=pk)
+    invoice.efd_receipt_number = ""
+    invoice.efd_qr_image = ""
+    invoice.save(update_fields=["efd_receipt_number", "efd_qr_image"])
+    messages.success(request, "EFD information removed.")
+    return redirect("inventory:invoice_detail", pk=pk)
+
+
+@inventory_required
 def invoice_issue(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk)
     invoice.status = InvoiceStatus.ISSUED
@@ -298,6 +332,19 @@ PRINTABLE = {
 }
 
 
+def _logo_data_uri():
+    """
+    The logo is embedded as a data URI so it shows up identically in the
+    browser's print view and in the xhtml2pdf PDF, with no static-file lookup.
+    """
+    import base64
+    from pathlib import Path
+    path = Path(settings.BASE_DIR) / "static" / "img" / "tryvis-logo.png"
+    if not path.exists():
+        return ""
+    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+
+
 @inventory_required
 def document_print(request, doc_type, pk):
     model, template, label = PRINTABLE[doc_type]
@@ -315,8 +362,14 @@ def document_print(request, doc_type, pk):
             "website": settings.COMPANY_WEBSITE,
             "phone": settings.COMPANY_PHONE,
             "tin": settings.COMPANY_TIN,
+            "email": settings.COMPANY_EMAIL,
+            "bank_name": settings.COMPANY_BANK_NAME,
+            "bank_account": settings.COMPANY_BANK_ACCOUNT,
+            "account_name": settings.COMPANY_ACCOUNT_NAME,
+            "logo": _logo_data_uri(),
         },
+        # ?pdf=1 opens the same page and saves it as a PDF straight from the
+        # browser, so the PDF is identical to what the Print button produces.
+        "auto_pdf": request.GET.get("pdf") == "1",
     }
-    if request.GET.get("pdf") == "1":
-        return render_pdf(template, context, f"{document.reference}.pdf")
     return render(request, template, context)

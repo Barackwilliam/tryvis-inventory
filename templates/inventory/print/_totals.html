@@ -1,0 +1,9 @@
+<table class="totals" width="100%">
+  <tr><td class="k" style="padding-left:8mm">Sub Total:</td><td class="v">{{ doc.subtotal|floatformat:"2g" }}</td></tr>
+  <tr><td class="k" style="padding-left:8mm">VAT (18%):</td><td class="v">{{ doc.vat_amount|floatformat:"2g" }}</td></tr>
+  <tr class="grand"><td class="k">Total:</td><td class="v">TZS {{ doc.grand_total|floatformat:"2g" }}</td></tr>
+  {% if paid_rows and doc.amount_paid %}
+  <tr><td class="k" style="padding-left:8mm;padding-top:3mm">Paid:</td><td class="v" style="padding-top:3mm">{{ doc.amount_paid|floatformat:"2g" }}</td></tr>
+  <tr><td class="k" style="padding-left:8mm">Balance due:</td><td class="v">{{ doc.balance_due|floatformat:"2g" }}</td></tr>
+  {% endif %}
+</table>

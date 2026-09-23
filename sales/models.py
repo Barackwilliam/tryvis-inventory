@@ -182,6 +182,12 @@ class Invoice(SalesDocument):
         related_name="invoice",
     )
     due_date = models.DateField(null=True, blank=True)
+
+    # EFD / fiscal device fields
+    # efd_receipt_number: typed by the user after printing the EFD receipt
+    # efd_qr_image: uploaded as a base64 data-URL via the browser (no file storage needed)
+    efd_receipt_number = models.CharField(max_length=50, blank=True, default="")
+    efd_qr_image = models.TextField(blank=True, default="")  # base64 data-URL
     status = models.CharField(
         max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.DRAFT
     )

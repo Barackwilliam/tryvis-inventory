@@ -52,6 +52,8 @@ urlpatterns = [
     path("invoices/<int:pk>/", sales_views.invoice_detail, name="invoice_detail"),
     path("invoices/<int:pk>/issue/", sales_views.invoice_issue, name="invoice_issue"),
     path("invoices/<int:pk>/deliver/", sales_views.invoice_to_delivery, name="invoice_to_delivery"),
+    path("invoices/<int:pk>/efd/", sales_views.invoice_efd_save, name="invoice_efd_save"),
+    path("invoices/<int:pk>/efd/clear/", sales_views.invoice_efd_clear, name="invoice_efd_clear"),
 
     path("delivery-notes/", sales_views.delivery_list, name="delivery_list"),
     path("delivery-notes/new/", sales_views.delivery_create, name="delivery_create"),
