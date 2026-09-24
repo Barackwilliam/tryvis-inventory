@@ -365,6 +365,8 @@ def document_print(request, doc_type, pk):
             "email": settings.COMPANY_EMAIL,
             "bank_name": settings.COMPANY_BANK_NAME,
             "bank_account": settings.COMPANY_BANK_ACCOUNT,
+            "bank_branch": settings.COMPANY_BANK_BRANCH,
+            "bank_swift": settings.COMPANY_BANK_SWIFT,
             "account_name": settings.COMPANY_ACCOUNT_NAME,
             "logo": _logo_data_uri(),
         },
