@@ -3,6 +3,7 @@
 {% block page_sub %}<p class="page__sub">{{ item.code }}{% if item.part_number %} &middot; part number {{ item.part_number }}{% endif %}</p>{% endblock %}
 {% block actions %}
   <a class="btn-x" href="{% url 'inventory:stock_adjust' %}">Fix the count</a>
+  {% if is_manager and item.tracks_stock %}<a class="btn-x" href="{% url 'inventory:cost_correct' item.pk %}">Correct cost</a>{% endif %}
   <a class="btn-x btn-x--primary" href="{% url 'inventory:item_edit' item.pk %}">Edit</a>
 {% endblock %}
 
@@ -85,9 +86,10 @@
       {% for m in movements %}
         <tr>
           <td>{{ m.movement_date|date:"d M Y" }}</td>
-          <td data-label="What happened">{{ m.get_movement_type_display }}</td>
-          <td data-label="Qty" class="num tabular {% if m.is_inward %}text-success{% else %}text-danger{% endif %}">
-            {% if m.is_inward %}+{% else %}-{% endif %}{{ m.quantity|floatformat:2 }}</td>
+          <td data-label="What happened">{{ m.get_movement_type_display }}{% if is_manager and not m.moves_stock %}
+            <div class="text-muted" style="font-size:12.5px">{{ m.notes }}</div>{% endif %}</td>
+          <td data-label="Qty" class="num tabular {% if not m.moves_stock %}text-muted{% elif m.is_inward %}text-success{% else %}text-danger{% endif %}">
+            {% if not m.moves_stock %}-{% else %}{% if m.is_inward %}+{% else %}-{% endif %}{{ m.quantity|floatformat:2 }}{% endif %}</td>
           <td data-label="Left" class="num tabular">{{ m.balance_after|floatformat:2 }}</td>
           {% if is_manager %}<td data-label="Cost each" class="num tabular">{{ m.unit_cost|floatformat:2 }}</td>{% endif %}
           <td data-label="Paper" class="text-muted">{{ m.source_reference|default:"-" }}</td>

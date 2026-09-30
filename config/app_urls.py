@@ -25,6 +25,7 @@ urlpatterns = [
     path("items/new/", catalog_views.item_create, name="item_create"),
     path("items/<int:pk>/", catalog_views.item_detail, name="item_detail"),
     path("items/<int:pk>/edit/", catalog_views.item_edit, name="item_edit"),
+    path("items/<int:pk>/cost/", inventory_views.cost_correct, name="cost_correct"),
     path("categories/", catalog_views.category_list, name="category_list"),
     path("suppliers/", catalog_views.supplier_list, name="supplier_list"),
     path("units/", catalog_views.unit_list, name="unit_list"),

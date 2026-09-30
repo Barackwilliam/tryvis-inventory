@@ -229,6 +229,61 @@ class Workshop(Base):
         self.assertFalse(job.is_overdue)
 
 
+class CostCorrection(Base):
+    """
+    BUG: a cost typed wrongly on starting stock could not be fixed. The help
+    assistant sent the Manager to a "Reverse" button that never existed.
+    """
+
+    def correct(self, cost, as_user=None):
+        self.client.force_login(as_user or self.manager)
+        return self.client.post(
+            reverse("inventory:cost_correct", args=[self.item.pk]),
+            {"new_cost": cost, "reason": "typed wrongly"},
+        )
+
+    def test_the_manager_can_correct_a_cost(self):
+        response = self.correct("22500")
+        self.assertRedirects(response, reverse("inventory:item_detail", args=[self.item.pk]))
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.average_cost, Decimal("22500"))
+        self.assertEqual(self.item.quantity_on_hand, Decimal("100"))
+
+    def test_the_correction_stays_in_the_history(self):
+        self.correct("22500")
+        row = StockMovement.objects.get(movement_type=MovementType.COST_CORRECTION)
+        self.assertEqual(row.quantity, 0)
+        self.assertIn("Was 8,000.00, now 22,500.00.", row.notes)
+        self.assertEqual(row.created_by, self.manager)
+
+    def test_the_stock_count_does_not_move(self):
+        self.correct("22500")
+        self.assertEqual(StockMovement.objects.balance_for(self.item), Decimal("100"))
+
+    def test_later_sales_use_the_corrected_cost(self):
+        self.correct("22500")
+        sale = record_movement(
+            item=self.item, movement_type=MovementType.SALE_OUT, quantity=Decimal("5"),
+        )
+        self.assertEqual(sale.unit_cost, Decimal("22500"))
+
+    def test_a_shopkeeper_cannot_correct_a_cost(self):
+        response = self.correct("1", as_user=self.shopkeeper)
+        self.assertEqual(response.status_code, 403)
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.average_cost, Decimal("8000"))
+
+    def test_a_shopkeeper_never_sees_the_old_or_new_cost_in_the_history(self):
+        self.correct("22500")
+        shop = Client()
+        shop.force_login(self.shopkeeper)
+        for url in (reverse("inventory:movement_list"),
+                    reverse("inventory:item_detail", args=[self.item.pk])):
+            body = shop.get(url).content.decode()
+            self.assertIn("Cost price corrected", body)
+            self.assertNotIn("22,500", body)
+
+
 class Screens(Base):
     def setUp(self):
         super().setUp()

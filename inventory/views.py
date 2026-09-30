@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
@@ -16,8 +16,10 @@ from inventory import dashboard as dashboard_data
 from accounts.models import user_is_manager
 from accounts.permissions import inventory_required, manager_required
 from catalog.models import Item, ItemType
-from inventory.forms import StockAdjustmentForm
-from inventory.models import MovementType, StockMovement, record_movement
+from inventory.forms import CostCorrectionForm, StockAdjustmentForm
+from inventory.models import (
+    MovementType, StockMovement, correct_cost, record_movement,
+)
 from inventory.reports import dead_stock_value, movement_analysis
 from jobs.models import JobCard
 from sales.models import Customer, Invoice, InvoiceStatus, Quotation
@@ -226,6 +228,28 @@ def stock_adjust(request):
         except ValueError as exc:
             messages.error(request, str(exc))
     return render(request, "inventory/stock_adjust.html", {"form": form})
+
+
+@manager_required
+def cost_correct(request, pk):
+    item = get_object_or_404(Item, pk=pk)
+    form = CostCorrectionForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            correct_cost(
+                item=item,
+                new_cost=form.cleaned_data["new_cost"],
+                reason=form.cleaned_data["reason"],
+                user=request.user,
+            )
+            messages.success(
+                request,
+                f"Done. {item.code} now costs {form.cleaned_data['new_cost']:,.2f} each.",
+            )
+            return redirect("inventory:item_detail", pk=item.pk)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+    return render(request, "inventory/cost_correct.html", {"form": form, "item": item})
 
 
 # --- reports -------------------------------------------------------------

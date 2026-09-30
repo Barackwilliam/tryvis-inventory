@@ -223,6 +223,20 @@ No. Nothing in the history is ever changed or removed — that is what makes it
 worth trusting. A mistake is corrected by recording the opposite movement, and
 both entries stay visible.
 
+**Q: I entered the wrong cost for an item. How do I correct it?**
+Manager only. Open the item from **All items**, press **Correct cost** at the
+top of its page, type the right cost of one piece, and **Save**. The number in
+the store does not change. There is no "Reverse" button and no need to enter a
+negative quantity — **Correct cost** is the only way.
+
+The change shows in **Stock history** as **Cost price corrected**, with the old
+and the new cost, so it can always be checked. Goods already sold keep the cost
+they were sold at; only sales from now on use the new cost.
+
+**Q: How do I change the selling price?**
+Open the item, press **Edit**, change **Price each**, and **Save**. This is not
+a cost correction and does not appear in the stock history.
+
 **Q: The system says there is not enough stock.**
 You are trying to take out more than the system thinks is there. Either the
 count is wrong — fix it under **Fix stock count** — or the quantity you typed
@@ -388,8 +402,8 @@ and the profit looks bigger than it is.
 
 **Q: An item shows no cost at all.**
 It has never been received through **Stock received**, and no cost was entered
-when it was first added. Use **Fix stock count** with "Starting stock" and put
-the real cost of a piece.
+when it was first added. The Manager opens the item and uses **Correct cost** to
+put the real cost of a piece.
 
 **Q: Something I expected to see is not there.**
 Check you are signed in as the right person — a lot of what the Manager sees is
@@ -404,8 +418,9 @@ It is a Manager page. Not a fault.
 
 Explain these rather than looking for a way around them.
 
-- Stock history is never edited or deleted. Mistakes are corrected with an
-  opposite movement, and both stay visible.
+- Stock history is never edited or deleted. A wrong count is corrected with an
+  opposite movement under **Fix stock count**; a wrong cost is corrected with
+  **Correct cost** on the item's page. Both stay visible in the history.
 - An item that has moved cannot be deleted, only switched off.
 - One invoice cannot deliver the same goods twice.
 - A purchase cannot be added to the store twice.
