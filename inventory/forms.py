@@ -67,3 +67,18 @@ class StockAdjustmentForm(forms.Form):
                     "Please enter what one piece costs. The system has no cost for this item yet."
                 )
         return cleaned
+
+
+class CostCorrectionForm(forms.Form):
+    """Manager only: put right a cost price that was typed wrongly."""
+
+    new_cost = forms.DecimalField(
+        label="Correct cost of one piece",
+        min_value=Decimal("0"), decimal_places=2,
+        help_text="In TZS. This replaces the cost the system has now.",
+        widget=forms.NumberInput(attrs={**BOOTSTRAP, "step": "0.01"}),
+    )
+    reason = forms.CharField(
+        label="Reason (optional)",
+        max_length=150, required=False, widget=forms.TextInput(attrs=BOOTSTRAP),
+    )

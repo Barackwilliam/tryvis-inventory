@@ -17,6 +17,7 @@ class MovementType(models.TextChoices):
     ADJUSTMENT_IN = "ADJUSTMENT_IN", "Counted - found more"
     ADJUSTMENT_OUT = "ADJUSTMENT_OUT", "Counted - found less"
     OPENING = "OPENING", "Starting stock"
+    COST_CORRECTION = "COST_CORRECTION", "Cost price corrected"
 
 
 INWARD_TYPES = {
@@ -97,6 +98,10 @@ class StockMovement(TimeStampedModel):
         return self.movement_type in INWARD_TYPES
 
     @property
+    def moves_stock(self):
+        return self.movement_type != MovementType.COST_CORRECTION
+
+    @property
     def value(self):
         return self.quantity * self.unit_cost
 
@@ -170,6 +175,47 @@ def record_movement(
         source_reference=source_reference,
         balance_after=item.quantity_on_hand,
         notes=notes,
+        created_by=user,
+    )
+
+
+@transaction.atomic
+def correct_cost(*, item, new_cost, reason="", user=None):
+    """
+    Put right a cost price that was entered wrongly.
+
+    No stock moves, so the row carries a quantity of zero: it exists only so
+    the change shows up in the history with who did it, the old cost and the
+    new one. Goods already sold keep the cost they were sold at.
+    """
+    new_cost = Decimal(new_cost)
+    if new_cost < 0:
+        raise ValueError("Cost cannot be below zero.")
+
+    item = Item.objects.select_for_update().get(pk=item.pk)
+    if not item.tracks_stock:
+        raise ValueError(f"{item.code} is a service, so it has no cost to correct.")
+
+    old_cost = item.average_cost
+    if new_cost == old_cost:
+        raise ValueError(f"{item.code} already costs {old_cost:,.2f} each.")
+
+    item.average_cost = new_cost
+    item.save(update_fields=["average_cost"])
+
+    note = f"Was {old_cost:,.2f}, now {new_cost:,.2f}."
+    if reason:
+        note = f"{note} {reason}"
+
+    return StockMovement.objects.create(
+        item=item,
+        movement_type=MovementType.COST_CORRECTION,
+        quantity=Decimal("0"),
+        unit_cost=new_cost,
+        movement_date=timezone.now().date(),
+        source_document="COST",
+        balance_after=item.quantity_on_hand,
+        notes=note[:200],
         created_by=user,
     )
 

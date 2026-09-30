@@ -447,6 +447,8 @@ def recent_activity(limit=12):
             tone, verb = "info", "Used on a job"
         elif movement.movement_type in (MovementType.RETURN_IN, MovementType.RETURN_OUT):
             tone, verb = "info", "Returned"
+        elif movement.movement_type == MovementType.COST_CORRECTION:
+            tone, verb = "warning", "Cost corrected"
         else:
             tone, verb = "warning", "Count corrected"
         today = timezone.now().date()

@@ -409,10 +409,12 @@
                     {% if row.movement.source_reference %}&middot; {{ row.movement.source_reference }}{% endif %}
                   </small>
                 </div>
+                {% if row.movement.moves_stock %}
                 <div class="feed__qty tabular" style="color:
                   {% if row.sign == '+' %}var(--success){% else %}var(--danger){% endif %}">
                   {{ row.sign }}{{ row.movement.quantity|floatformat:0 }}
                 </div>
+                {% endif %}
               </div>
             {% endfor %}
           </div>
